@@ -106,25 +106,7 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 			return true;
 		}
 	},
-	{
-		"BindHost", ListType,
-		"The list of allowed bindhosts.",
-		[](const CZNC* pZNC) {
-			const VCString& vsHosts = pZNC->GetBindHosts();
-			return CString("\n").Join(vsHosts.begin(), vsHosts.end());
-		},
-		[](CUser* pModifier, CZNC* pZNC, const CString& sVal, CString& sError) {
-			VCString ssHosts;
-			sVal.Split(" ", ssHosts, false);
-			for (const CString& sHost : ssHosts)
-				pZNC->AddBindHost(sHost);
-			return true;
-		},
-		[](CUser* pModifier, CZNC* pZNC, CString& sError) {
-			pZNC->ClearBindHosts();
-			return true;
-		},
-	},
+	// TODO: BindHost
 	{
 		"ConnectDelay", IntType,
 		"The number of seconds every IRC connection is delayed.",
@@ -366,25 +348,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 			return true;
 		}
 	},
-	{
-		"BindHost", StringType,
-		"The default bind host.",
-		[](const CUser* pTarget) {
-			return pTarget->GetBindHost();
-		},
-		[](CUser* pModifier, CUser* pTarget, const CString& sVal, CString& sError) {
-			if (!pModifier->IsAdmin() && (pModifier->DenySetBindHost() || !CZNC::Get().IsBindHostAllowed(sVal))) {
-				sError = "access denied";
-				return false;
-			}
-			pTarget->SetBindHost(sVal);
-			return true;
-		},
-		[](CUser* pModifier, CUser* pTarget, CString& sError) {
-			pTarget->SetBindHost("");
-			return true;
-		}
-	},
+	// TODO: BindHost
 	{
 		"ChanBufferSize", IntType,
 		"The maximum amount of lines stored for each channel playback buffer.",
@@ -468,25 +432,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 			return true;
 		}
 	},
-	{
-		"DCCBindHost", StringType,
-		"An optional bindhost for DCC connections.",
-		[](const CUser* pTarget) {
-			return pTarget->GetDCCBindHost();
-		},
-		[](CUser* pModifier, CUser* pTarget, const CString& sVal, CString& sError) {
-			if (!pModifier->IsAdmin() && (pModifier->DenySetBindHost() || !CZNC::Get().IsBindHostAllowed(sVal))) {
-				sError = "access denied";
-				return false;
-			}
-			pTarget->SetDCCBindHost(sVal);
-			return true;
-		},
-		[](CUser* pModifier, CUser* pTarget, CString& sError) {
-			pTarget->SetDCCBindHost("");
-			return true;
-		}
-	},
+	// TODO: DCCBindHost
 	{
 		"DenyLoadMod", BoolType,
 		"Whether the user is denied access to load modules.",
@@ -510,29 +456,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 			return true;
 		}
 	},
-	{
-		"DenySetBindHost", BoolType,
-		"Whether the user is denied access to set a bind host.",
-		[](const CUser* pTarget) {
-			return CString(pTarget->DenySetBindHost());
-		},
-		[](CUser* pModifier, CUser* pTarget, const CString& sVal, CString& sError) {
-			if (!pModifier->IsAdmin()) {
-				sError = "access denied";
-				return false;
-			}
-			pTarget->SetDenySetBindHost(sVal.ToBool());
-			return true;
-		},
-		[](CUser* pModifier, CUser* pTarget, CString& sError) {
-			if (!pModifier->IsAdmin()) {
-				sError = "access denied";
-				return false;
-			}
-			pTarget->SetDenySetBindHost(false);
-			return true;
-		}
-	},
+	// TODO: DenySetBindHost
 	{
 		"Ident", StringType,
 		"The default ident.",
@@ -825,25 +749,7 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 			return true;
 		}
 	},
-	{
-		"BindHost", StringType,
-		"An optional network specific bind host.",
-		[](const CIRCNetwork* pTarget) {
-			return pTarget->GetBindHost();
-		},
-		[](CUser* pModifier, CIRCNetwork* pTarget, const CString& sVal, CString& sError) {
-			if (!pModifier->IsAdmin() && (pModifier->DenySetBindHost() || !CZNC::Get().IsBindHostAllowed(sVal))) {
-				sError = "access denied";
-				return false;
-			}
-			pTarget->SetBindHost(sVal);
-			return true;
-		},
-		[](CUser* pModifier, CIRCNetwork* pTarget, CString& sError) {
-			pTarget->SetBindHost("");
-			return true;
-		}
-	},
+	// TODO: BindHost
 #ifdef HAVE_ICU
 	{
 		"Encoding", StringType,
