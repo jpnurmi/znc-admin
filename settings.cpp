@@ -64,6 +64,7 @@ private:
 	template <typename V>
 	CTable FilterVarTable(const std::vector<V>& vVars, const CString& sFilter) const;
 
+	void PutError(const CString& sTgt, const CString& sLine);
 	void PutLine(const CString& sTgt, const CString& sLine);
 	void PutTable(const CString& sTgt, const CTable& Table);
 };
@@ -388,7 +389,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 		[](CUser* pUser, const CString& sVal, CString& sError) {
 			// TODO: move sanity checking to CUser::SetBindHost()
 			if (sVal.Equals(pUser->GetBindHost())) {
-				sError = "This bind host is already set!";
+				sError = "This bind host is already set";
 				return false;
 			}
 
@@ -479,12 +480,12 @@ static const std::vector<Variable<CUser>> UserVars = {
 			CString sReply = sVal.Token(1, true);
 			if (sReply.empty()) {
 				if (!pUser->DelCTCPReply(sRequest.AsUpper())) {
-					sError = "Error: unable to remove!";
+					sError = "unable to remove";
 					return false;
 				}
 			} else {
 				if (!pUser->AddCTCPReply(sRequest, sReply)) {
-					sError = "Error: unable to add!";
+					sError = "unable to add";
 					return false;
 				}
 			}
@@ -744,7 +745,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 		[](CUser* pUser, const CString& sVal, CString& sError) {
 			CSettingsMod* pMod = dynamic_cast<CSettingsMod*>(pUser->GetModules().FindModule("settings"));
 			if (!pMod) {
-				sError = "Error: unable to find the module instance!";
+				sError = "unable to find the module instance";
 				return false;
 			}
 			pMod->SetPrefix(sVal);
@@ -753,7 +754,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 		[](CUser* pUser, CString& sError) {
 			CSettingsMod* pMod = dynamic_cast<CSettingsMod*>(pUser->GetModules().FindModule("settings"));
 			if (!pMod) {
-				sError = "Error: unable to find the module instance!";
+				sError = "unable to find the module instance";
 				return false;
 			}
 			pMod->SetPrefix("*");
@@ -832,7 +833,7 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 		[](CIRCNetwork* pNetwork, const CString& sVal, CString& sError) {
 			// TODO: move the sanity checking to CIRCNetwork::SetBindHost()
 			if (sVal.Equals(pNetwork->GetBindHost())) {
-				sError = "This bind host is already set!";
+				sError = "This bind host is already set";
 				return false;
 			}
 
@@ -1175,7 +1176,7 @@ void CSettingsMod::OnModCommand(const CString& sLine)
 	} else if (sCmd.Equals("Reset")) {
 		OnResetCommand(&CZNC::Get(), GetModName(), sLine, GlobalVars);
 	} else {
-		PutModule("Unknown command!");
+		PutError(GetModName(), "unknown command");
 	}
 }
 
@@ -1227,7 +1228,7 @@ CModule::EModRet CSettingsMod::OnUserRaw(CString& sLine)
 							}
 						}
 					}
-					PutLine(sPfx + sTgt, "Unknown (or ambiguous) network or channel!");
+					PutError(sPfx + sTgt, "unknown (or ambiguous) network or channel");
 					return HALT;
 				}
 				// <network/#chan>
@@ -1235,7 +1236,7 @@ CModule::EModRet CSettingsMod::OnUserRaw(CString& sLine)
 					if (CChan* pChan = pNetwork->FindChan(vsParts[1])) {
 						return OnChanCommand(pChan, sPfx + sTgt, sRest);
 					} else {
-						PutLine(sPfx + sTgt, "Unknown channel!");
+						PutError(sPfx + sTgt, "unknown channel");
 						return HALT;
 					}
 				}
@@ -1246,11 +1247,11 @@ CModule::EModRet CSettingsMod::OnUserRaw(CString& sLine)
 						if (CChan* pChan = pNetwork->FindChan(vsParts[2])) {
 							return OnChanCommand(pChan, sPfx + sTgt, sRest);
 						} else {
-							PutLine(sPfx + sTgt, "Unknown channel!");
+							PutError(sPfx + sTgt, "unknown channel");
 							return HALT;
 						}
 					} else {
-						PutLine(sPfx + sTgt, "Unknown network!");
+						PutError(sPfx + sTgt, "unknown network");
 						return HALT;
 					}
 				}
@@ -1263,7 +1264,7 @@ CModule::EModRet CSettingsMod::OnUserRaw(CString& sLine)
 CModule::EModRet CSettingsMod::OnUserCommand(CUser* pUser, const CString& sTgt, const CString& sLine)
 {
 	if (pUser != GetUser() && !GetUser()->IsAdmin()) {
-		PutLine(sTgt, "Error: access denied.");
+		PutError(sTgt, "access denied");
 		return HALT;
 	}
 
@@ -1280,7 +1281,7 @@ CModule::EModRet CSettingsMod::OnUserCommand(CUser* pUser, const CString& sTgt, 
 	else if (sCmd.Equals("Reset"))
 		OnResetCommand(pUser, sTgt, sLine, UserVars);
 	else
-		PutLine(sTgt, "Unknown command!");
+		PutError(sTgt, "unknown command");
 
 	return HALT;
 }
@@ -1288,7 +1289,7 @@ CModule::EModRet CSettingsMod::OnUserCommand(CUser* pUser, const CString& sTgt, 
 CModule::EModRet CSettingsMod::OnNetworkCommand(CIRCNetwork* pNetwork, const CString& sTgt, const CString& sLine)
 {
 	if (pNetwork->GetUser() != GetUser() && !GetUser()->IsAdmin()) {
-		PutLine(sTgt, "Error: access denied.");
+		PutError(sTgt, "access denied");
 		return HALT;
 	}
 
@@ -1305,7 +1306,7 @@ CModule::EModRet CSettingsMod::OnNetworkCommand(CIRCNetwork* pNetwork, const CSt
 	else if (sCmd.Equals("Reset"))
 		OnResetCommand(pNetwork, sTgt, sLine, NetworkVars);
 	else
-		PutLine(sTgt, "Unknown command!");
+		PutError(sTgt, "unknown command");
 
 	return HALT;
 }
@@ -1313,7 +1314,7 @@ CModule::EModRet CSettingsMod::OnNetworkCommand(CIRCNetwork* pNetwork, const CSt
 CModule::EModRet CSettingsMod::OnChanCommand(CChan* pChan, const CString& sTgt, const CString& sLine)
 {
 	if (pChan->GetNetwork()->GetUser() != GetUser() && !GetUser()->IsAdmin()) {
-		PutLine(sTgt, "Error: access denied.");
+		PutError(sTgt, "access denied");
 		return HALT;
 	}
 
@@ -1330,7 +1331,7 @@ CModule::EModRet CSettingsMod::OnChanCommand(CChan* pChan, const CString& sTgt, 
 	else if (sCmd.Equals("Reset"))
 		OnResetCommand(pChan, sTgt, sLine, ChanVars);
 	else
-		PutLine(sTgt, "Unknown command!");
+		PutError(sTgt, "unknown command");
 
 	return HALT;
 }
@@ -1344,7 +1345,7 @@ void CSettingsMod::OnHelpCommand(const CString& sTgt, const CString& sLine, cons
 	if (!Table.empty())
 		PutTable(sTgt, Table);
 	else
-		PutLine(sTgt, "Unknown command!");
+		PutError(sTgt, "unknown command");
 }
 
 template <typename T, typename V>
@@ -1356,7 +1357,7 @@ void CSettingsMod::OnListCommand(T* pTarget, const CString& sTgt, const CString&
 	if (!Table.empty())
 		PutTable(sTgt, Table);
 	else
-		PutLine(sTgt, "Unknown variable!");
+		PutError(sTgt, "unknown variable");
 }
 
 template <typename T, typename V>
@@ -1385,7 +1386,7 @@ void CSettingsMod::OnGetCommand(T* pTarget, const CString& sTgt, const CString& 
 	}
 
 	if (!bFound)
-		PutLine(sTgt, "Unknown variable!");
+		PutError(sTgt, "unknown variable");
 }
 
 template <typename T, typename V>
@@ -1404,9 +1405,9 @@ void CSettingsMod::OnSetCommand(T* pTarget, const CString& sTgt, const CString& 
 		if (Var.name.WildCmp(sVar, CString::CaseInsensitive)) {
 			CString sError;
 			if (!CanModify(GetUser(), Var)) {
-				PutLine(sTgt, "Error: access denied");
+				PutError(sTgt, "access denied");
 			} else if (!Var.setter(pTarget, sVal, sError)) {
-				PutLine(sTgt, sError);
+				PutError(sTgt, sError);
 			} else {
 				VCString vsValues;
 				Var.getter(pTarget).Split("\n", vsValues, false);
@@ -1422,7 +1423,7 @@ void CSettingsMod::OnSetCommand(T* pTarget, const CString& sTgt, const CString& 
 	}
 
 	if (!bFound)
-		PutLine(sTgt, "Unknown variable!");
+		PutError(sTgt, "unknown variable");
 }
 
 template <typename T, typename V>
@@ -1440,11 +1441,11 @@ void CSettingsMod::OnResetCommand(T* pTarget, const CString& sTgt, const CString
 		if (Var.name.WildCmp(sVar, CString::CaseInsensitive)) {
 			CString sError;
 			if (!CanModify(GetUser(), Var)) {
-				PutLine(sTgt, "Error: access denied");
+				PutError(sTgt, "access denied");
 			} else if (!Var.resetter) {
-				PutLine(sTgt, "Error: reset not supported!");
+				PutError(sTgt, "reset not supported");
 			} else if (!Var.resetter(pTarget, sError)) {
-				PutLine(sTgt, sError);
+				PutError(sTgt, sError);
 			} else {
 				VCString vsValues;
 				Var.getter(pTarget).Split("\n", vsValues, false);
@@ -1460,7 +1461,7 @@ void CSettingsMod::OnResetCommand(T* pTarget, const CString& sTgt, const CString
 	}
 
 	if (!bFound)
-		PutLine(sTgt, "Error: unknown variable!");
+		PutError(sTgt, "unknown variable");
 }
 
 CTable CSettingsMod::FilterCmdTable(const CString& sFilter) const
@@ -1507,6 +1508,11 @@ CTable CSettingsMod::FilterVarTable(const std::vector<V>& vVars, const CString& 
 	}
 
 	return Table;
+}
+
+void CSettingsMod::PutError(const CString& sTgt, const CString& sError)
+{
+	PutLine(sTgt, "Error: " + sError);
 }
 
 void CSettingsMod::PutLine(const CString& sTgt, const CString& sLine)
