@@ -291,7 +291,10 @@ static const std::vector<Variable<CUser>> UserVars = {
 			pUser->SetAltNick(sVal);
 			return true;
 		},
-		nullptr
+		[](CUser* pUser, CString& sError) {
+			pUser->SetAltNick("");
+			return true;
+		}
 	},
 	{
 		"AppendTimestamp", BoolType,
@@ -303,7 +306,10 @@ static const std::vector<Variable<CUser>> UserVars = {
 			pUser->SetTimestampAppend(sVal.ToBool());
 			return true;
 		},
-		nullptr
+		[](CUser* pUser, CString& sError) {
+			pUser->SetTimestampAppend(false); // TODO: expose the default constants?
+			return true;
+		}
 	},
 	{
 		"AutoClearChanBuffer", BoolType,
@@ -315,7 +321,10 @@ static const std::vector<Variable<CUser>> UserVars = {
 			pUser->SetAutoClearChanBuffer(sVal.ToBool());
 			return true;
 		},
-		nullptr
+		[](CUser* pUser, CString& sError) {
+			pUser->SetAutoClearChanBuffer(true); // TODO: expose the default constants?
+			return true;
+		}
 	},
 	{
 		"AutoClearQueryBuffer", BoolType,
@@ -327,7 +336,10 @@ static const std::vector<Variable<CUser>> UserVars = {
 			pUser->SetAutoClearQueryBuffer(sVal.ToBool());
 			return true;
 		},
-		nullptr
+		[](CUser* pUser, CString& sError) {
+			pUser->SetAutoClearQueryBuffer(true); // TODO: expose the default constants?
+			return true;
+		}
 	},
 	{
 		"BindHost", StringType,
@@ -383,7 +395,10 @@ static const std::vector<Variable<CUser>> UserVars = {
 			}
 			return true;
 		},
-		nullptr
+		[](CUser* pUser, CString& sError) {
+			pUser->SetChanBufferSize(50); // TODO: expose the default constants?
+			return true;
+		},
 	},
 	{
 		"ChanModes", StringType,
@@ -395,7 +410,10 @@ static const std::vector<Variable<CUser>> UserVars = {
 			pUser->SetDefaultChanModes(sVal);
 			return true;
 		},
-		nullptr
+		[](CUser* pUser, CString& sError) {
+			pUser->SetDefaultChanModes("");
+			return true;
+		}
 	},
 #ifdef HAVE_ICU
 	{
@@ -408,7 +426,10 @@ static const std::vector<Variable<CUser>> UserVars = {
 			pUser->SetClientEncoding(sVal);
 			return true;
 		},
-		nullptr
+		[](CUser* pUser, CString& sError) {
+			pUser->SetClientEncoding("");
+			return true;
+		}
 	},
 #endif
 	{
@@ -513,7 +534,10 @@ static const std::vector<Variable<CUser>> UserVars = {
 			pUser->SetJoinTries(sVal.ToUInt());
 			return true;
 		},
-		nullptr
+		[](CUser* pUser, CString& sError) {
+			pUser->SetJoinTries(10); // TODO: expose the default constants?
+			return true;
+		}
 	},
 	{
 		"MaxJoins", IntType,
@@ -525,7 +549,10 @@ static const std::vector<Variable<CUser>> UserVars = {
 			pUser->SetMaxJoins(sVal.ToUInt());
 			return true;
 		},
-		nullptr
+		[](CUser* pUser, CString& sError) {
+			pUser->SetMaxJoins(0); // TODO: expose the default constants?
+			return true;
+		}
 	},
 	{
 		"MaxNetworks", IntType,
@@ -541,7 +568,10 @@ static const std::vector<Variable<CUser>> UserVars = {
 			pUser->SetMaxNetworks(sVal.ToUInt());
 			return true;
 		},
-		nullptr
+		[](CUser* pUser, CString& sError) {
+			pUser->SetMaxNetworks(1); // TODO: expose the default constants?
+			return true;
+		}
 	},
 	{
 		"MaxQueryBuffers", IntType,
@@ -553,7 +583,10 @@ static const std::vector<Variable<CUser>> UserVars = {
 			pUser->SetMaxQueryBuffers(sVal.ToUInt());
 			return true;
 		},
-		nullptr
+		[](CUser* pUser, CString& sError) {
+			pUser->SetMaxQueryBuffers(50); // TODO: expose the default constants?
+			return true;
+		}
 	},
 	{
 		"MultiClients", BoolType,
@@ -565,7 +598,10 @@ static const std::vector<Variable<CUser>> UserVars = {
 			pUser->SetMultiClients(sVal.ToBool());
 			return true;
 		},
-		nullptr
+		[](CUser* pUser, CString& sError) {
+			pUser->SetMultiClients(true); // TODO: expose the default constants?
+			return true;
+		}
 	},
 	{
 		"Nick", StringType,
@@ -577,7 +613,10 @@ static const std::vector<Variable<CUser>> UserVars = {
 			pUser->SetNick(sVal);
 			return true;
 		},
-		nullptr
+		[](CUser* pUser, CString& sError) {
+			pUser->SetNick("");
+			return true;
+		}
 	},
 	{
 		"PrependTimestamp", BoolType,
@@ -589,7 +628,10 @@ static const std::vector<Variable<CUser>> UserVars = {
 			pUser->SetTimestampPrepend(sVal.ToBool());
 			return true;
 		},
-		nullptr
+		[](CUser* pUser, CString& sError) {
+			pUser->SetTimestampPrepend(true); // TODO: expose the default constants?
+			return true;
+		}
 	},
 	{
 		"Password", StringType,
@@ -619,7 +661,10 @@ static const std::vector<Variable<CUser>> UserVars = {
 			}
 			return true;
 		},
-		nullptr
+		[](CUser* pUser, CString& sError) {
+			pUser->SetQueryBufferSize(50); // TODO: expose the default constants?
+			return true;
+		}
 	},
 	{
 		"QuitMsg", StringType,
@@ -631,7 +676,10 @@ static const std::vector<Variable<CUser>> UserVars = {
 			pUser->SetQuitMsg(sVal);
 			return true;
 		},
-		nullptr
+		[](CUser* pUser, CString& sError) {
+			pUser->SetQuitMsg("");
+			return true;
+		}
 	},
 	{
 		"RealName", StringType,
@@ -643,7 +691,10 @@ static const std::vector<Variable<CUser>> UserVars = {
 			pUser->SetRealName(sVal);
 			return true;
 		},
-		nullptr
+		[](CUser* pUser, CString& sError) {
+			pUser->SetRealName("");
+			return true;
+		}
 	},
 	{
 		"Skin", StringType,
@@ -655,7 +706,10 @@ static const std::vector<Variable<CUser>> UserVars = {
 			pUser->SetSkinName(sVal);
 			return true;
 		},
-		nullptr
+		[](CUser* pUser, CString& sError) {
+			pUser->SetSkinName("");
+			return true;
+		}
 	},
 	{
 		"SettingsPrefix", StringType,
@@ -670,9 +724,18 @@ static const std::vector<Variable<CUser>> UserVars = {
 				sError = "Error: unable to find the module instance!";
 				return false;
 			}
+			pMod->SetPrefix(sVal);
 			return true;
 		},
-		nullptr
+		[](CUser* pUser, CString& sError) {
+			CSettingsMod* pMod = dynamic_cast<CSettingsMod*>(pUser->GetModules().FindModule("settings"));
+			if (!pMod) {
+				sError = "Error: unable to find the module instance!";
+				return false;
+			}
+			pMod->SetPrefix("*");
+			return true;
+		}
 	},
 	{
 		"StatusPrefix", StringType,
@@ -684,7 +747,10 @@ static const std::vector<Variable<CUser>> UserVars = {
 			pUser->SetStatusPrefix(sVal);
 			return true;
 		},
-		nullptr
+		[](CUser* pUser, CString& sError) {
+			pUser->SetStatusPrefix("*"); // TODO: expose the default constants?
+			return true;
+		}
 	},
 	{
 		"TimestampFormat", StringType,
@@ -696,7 +762,10 @@ static const std::vector<Variable<CUser>> UserVars = {
 			pUser->SetTimestampFormat(sVal);
 			return true;
 		},
-		nullptr
+		[](CUser* pUser, CString& sError) {
+			pUser->SetTimestampFormat("[%H:%M:%S]"); // TODO: expose the default constants?
+			return true;
+		}
 	},
 	{
 		"Timezone", StringType,
@@ -708,7 +777,10 @@ static const std::vector<Variable<CUser>> UserVars = {
 			pUser->SetTimezone(sVal);
 			return true;
 		},
-		nullptr
+		[](CUser* pUser, CString& sError) {
+			pUser->SetTimezone("");
+			return true;
+		}
 	},
 };
 
