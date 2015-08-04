@@ -994,6 +994,22 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 			return true;
 		}
 	},
+	{
+		"TrustedServerFingerprint", ListType,
+		"The list of trusted server fingerprints.",
+		[](const CIRCNetwork* pNetwork) {
+			const SCString& sFP = pNetwork->GetTrustedFingerprints();
+			return CString("\n").Join(sFP.begin(), sFP.end());
+		},
+		[](CUser* pModifier, CIRCNetwork* pNetwork, const CString& sVal, CString& sError) {
+			pNetwork->AddTrustedFingerprint(sVal);
+			return true;
+		},
+		[](CUser* pModifier, CIRCNetwork* pNetwork, CString& sError) {
+			pNetwork->ClearTrustedFingerPrints();
+			return true;
+		}
+	},
 };
 
 static const std::vector<Variable<CChan>> ChanVars = {
