@@ -66,11 +66,11 @@ private:
 };
 
 enum VarType {
-	StringType, BoolType, IntType, DoubleType
+	StringType, BoolType, IntType, DoubleType, ListType
 };
 
 static const char* VarTypes[] = {
-	"String", "Boolean", "Integer", "Double"
+	"String", "Boolean", "Integer", "Double", "List"
 };
 
 template <typename T>
@@ -84,6 +84,32 @@ struct Variable
 };
 
 static const std::vector<Variable<CUser>> UserVars = {
+	{
+		"CTCPReply", ListType,
+		"A list of CTCP request-reply-pairs. Syntax: <request> <reply>.",
+		[](const CUser* pUser) {
+			VCString vsReplies;
+			for (const auto& it : pUser->GetCTCPReplies())
+				vsReplies.push_back(it.first + " " + it.second);
+			return CString("\n").Join(vsReplies.begin(), vsReplies.end());
+		},
+		[](CUser* pUser, const CString& sVal, CString& sError) {
+			CString sRequest = sVal.Token(0);
+			CString sReply = sVal.Token(1, true);
+			if (sReply.empty()) {
+				if (!pUser->DelCTCPReply(sRequest.AsUpper())) {
+					sError = "Error: unable to remove!";
+					return false;
+				}
+			} else {
+				if (!pUser->AddCTCPReply(sRequest, sReply)) {
+					sError = "Error: unable to add!";
+					return false;
+				}
+			}
+			return true;
+		}
+	},
 	{
 		"Nick", StringType,
 		"The default primary nick.",
@@ -925,7 +951,14 @@ void CSettingsMod::OnGetCommand(T* pTarget, const CString& sTgt, const CString& 
 	bool bFound = false;
 	for (const auto& Var : vVars) {
 		if (Var.name.WildCmp(sVar, CString::CaseInsensitive)) {
-			PutLine(sTgt, Var.name + " = " + Var.getter(pTarget));
+			VCString vsValues;
+			Var.getter(pTarget).Split("\n", vsValues, false);
+			if (vsValues.empty()) {
+				PutLine(sTgt, Var.name + " = ");
+			} else {
+				for (const CString& s : vsValues)
+					PutLine(sTgt, Var.name + " = " + s);
+			}
 			bFound = true;
 		}
 	}
@@ -949,10 +982,18 @@ void CSettingsMod::OnSetCommand(T* pTarget, const CString& sTgt, const CString& 
 	for (const auto& Var : vVars) {
 		if (Var.name.WildCmp(sVar, CString::CaseInsensitive)) {
 			CString sError;
-			if (!Var.setter(pTarget, sVal, sError))
+			if (!Var.setter(pTarget, sVal, sError)) {
 				PutLine(sTgt, sError);
-			else
-				PutLine(sTgt, Var.name + " = " + Var.getter(pTarget));
+			} else {
+				VCString vsValues;
+				Var.getter(pTarget).Split("\n", vsValues, false);
+				if (vsValues.empty()) {
+					PutLine(sTgt, Var.name + " = ");
+				} else {
+					for (const CString& s : vsValues)
+						PutLine(sTgt, Var.name + " = " + s);
+				}
+			}
 			bFound = true;
 		}
 	}
