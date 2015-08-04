@@ -65,16 +65,19 @@ private:
 	void PutTable(const CString& sTgt, const CTable& Table);
 };
 
-static const char* StringType = "String";
-static const char* BoolType = "Boolean (true/false)";
-static const char* IntType = "Integer";
-static const char* DoubleType = "Double";
+enum VarType {
+	StringType, BoolType, IntType, DoubleType
+};
+
+static const char* VarTypes[] = {
+	"String", "Boolean", "Integer", "Double"
+};
 
 template <typename T>
 struct Variable
 {
 	CString name;
-	CString type;
+	VarType type;
 	CString description;
 	std::function<CString(const T*)> getter;
 	std::function<bool(T*, const CString&, CString&)> setter;
@@ -993,9 +996,10 @@ CTable CSettingsMod::FilterVarTable(const std::vector<V>& vVars, const CString& 
 	Table.AddColumn("Description");
 
 	for (const auto& Var : vVars) {
-		if (sFilter.empty() || Var.type.Equals(sFilter) || Var.name.StartsWith(sFilter) || Var.name.WildCmp(sFilter, CString::CaseInsensitive)) {
+		CString sType(VarTypes[Var.type]);
+		if (sFilter.empty() || sType.Equals(sFilter) || Var.name.StartsWith(sFilter) || Var.name.WildCmp(sFilter, CString::CaseInsensitive)) {
 			Table.AddRow();
-			Table.SetCell("Variable", Var.name + " (" + Var.type + ")");
+			Table.SetCell("Variable", Var.name + " (" + sType + ")");
 			Table.SetCell("Description", Var.description);
 		}
 	}
