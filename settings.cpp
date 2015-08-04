@@ -22,7 +22,7 @@
 #include <functional>
 
 #if (VERSION_MAJOR < 1) || (VERSION_MAJOR == 1 && VERSION_MINOR < 7)
-#error The settings module requires the latest development version of ZNC.
+#error The settings module requires ZNC version 1.7.0 or later.
 #endif
 
 enum VarType {
