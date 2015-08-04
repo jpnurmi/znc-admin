@@ -1026,39 +1026,32 @@ void CSettingsMod::OnModCommand(const CString& sLine)
 	if (sCmd.Equals("Help")) {
 		HandleHelpCommand(sLine);
 
-		CString sPfx = GetUser()->GetStatusPrefix() + GetPrefix();
-		CString sUsr = GetUser()->GetUserName();
-		CString sNet = "network";
-		CString sChan = "#chan";
-
-		CIRCNetwork* pNetwork = GetNetwork();
-		if (pNetwork) {
-			sNet = pNetwork->GetName();
-			const std::vector<CChan*> vChans = pNetwork->GetChans();
-			if (!vChans.empty())
-				sChan = vChans.front()->GetName();
-		}
+		const CString sPfx = GetUser()->GetStatusPrefix() + GetPrefix();
 
 		if (sLine.Token(1).empty()) {
-			PutModule("In order to adjust user, network and channel specific settings,");
-			PutModule("open a query with <" + sPfx + "target>, where target is a user, network, or");
-			PutModule("channel name.");
+			PutModule("To access settings of the current user or network, open a query");
+			PutModule("with " + sPfx + "user or " + sPfx + "network, respectively.");
 			PutModule("-----");
-			PutModule("Examples:");
-			PutModule("- user settings: /msg " + sPfx + sUsr + " help");
-			PutModule("- network settings: /msg " + sPfx + sNet + " help");
-			PutModule("- channel settings: /msg " + sPfx + sChan + " help");
+			PutModule("- user settings: /msg " + sPfx + "user help");
+			PutModule("- network settings: /msg " + sPfx + "network help");
 			PutModule("-----");
-			PutModule("To access network settings of a different user (admins only),");
-			PutModule("or channel settings of a different network, the target can be");
-			PutModule("a combination of a user, network, and channel name separated");
-			PutModule("by a forward slash ('/') character.");
+			PutModule("To access settings of a different user (admins only) or a specific");
+			PutModule("network, open a query with " + sPfx + "target, where target is the name of");
+			PutModule("the user or network. The same applies to channel specific settings.");
+			PutModule("-----");
+			PutModule("- user settings: /msg " + sPfx + "somebody help");
+			PutModule("- network settings: /msg " + sPfx + "freenode help");
+			PutModule("- channel settings: /msg " + sPfx + "#znc help");
+			PutModule("-----");
+			PutModule("It is also possible to access the network settings of a different");
+			PutModule("user (admins only), or the channel settings of a different network.");
+			PutModule("Combine a user, network and channel name separated by a forward");
+			PutModule("slash ('/') character.");
 			PutModule("-----");
 			PutModule("Advanced examples:");
-			PutModule("- network settings of another user: /msg " + sPfx + "user/network help");
-			PutModule("- channel settings of another network: /msg " + sPfx + "network/#chan help");
-			PutModule("- channel settings of another network of another user: /msg " + sPfx + "user/network/#chan help");
-			PutModule("-----");
+			PutModule("- network settings of another user: /msg " + sPfx + "somebody/freenode help");
+			PutModule("- channel settings of another network: /msg " + sPfx + "freenode/#znc help");
+			PutModule("- channel settings of another network of another user: /msg " + sPfx + "somebody/freenode/#znc help");
 		}
 	} else if (sCmd.Equals("List")) {
 		OnListCommand(&CZNC::Get(), GetModName(), sLine, GlobalVars);
@@ -1383,6 +1376,12 @@ CTable CSettingsMod::FilterCmdTable(const CString& sFilter) const
 		Table.SetCell("Description", "Sets the value of a variable.");
 	}
 
+	if (sFilter.empty() || sFilter.Equals("Reset")) {
+		Table.AddRow();
+		Table.SetCell("Command", "Reset <variable> <value>");
+		Table.SetCell("Description", "Resets the value(s) of a variable.");
+	}
+
 	return Table;
 }
 
@@ -1431,4 +1430,4 @@ void CSettingsMod::PutTable(const CString& sTgt, const CTable& Table)
 template<> void TModInfo<CSettingsMod>(CModInfo& Info) {
 }
 
-USERMODULEDEFS(CSettingsMod, "Adjust your settings conveniently through IRC.")
+USERMODULEDEFS(CSettingsMod, "Access ZNC settings conveniently through IRC.")
