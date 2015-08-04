@@ -109,14 +109,16 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 			return CString("\n").Join(vsHosts.begin(), vsHosts.end());
 		},
 		[](CZNC* pZNC, const CString& sVal, CString& sError) {
-			pZNC->ClearBindHosts();
 			VCString ssHosts;
 			sVal.Split(" ", ssHosts, false);
 			for (const CString& sHost : ssHosts)
 				pZNC->AddBindHost(sHost);
 			return true;
 		},
-		nullptr
+		[](CZNC* pZNC, CString& sError) {
+			pZNC->ClearBindHosts();
+			return true;
+		},
 	},
 	{
 		"ConnectDelay", IntType,
@@ -162,11 +164,13 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 			return CString("\n").Join(vsMotd.begin(), vsMotd.end());
 		},
 		[](CZNC* pZNC, const CString& sVal, CString& sError) {
-			// TODO: multiple lines
-			pZNC->SetMotd(sVal);
+			pZNC->AddMotd(sVal);
 			return true;
 		},
-		nullptr
+		[](CZNC* pZNC, CString& sError) {
+			pZNC->ClearMotd();
+			return true;
+		},
 	},
 	// TODO: PidFile
 	{
@@ -228,15 +232,16 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 			return CString("\n").Join(vsProxies.begin(), vsProxies.end());
 		},
 		[](CZNC* pZNC, const CString& sVal, CString& sError) {
-			pZNC->ClearTrustedProxies();
 			SCString ssProxies;
 			sVal.Split(" ", ssProxies, false);
 			for (const CString& sProxy : ssProxies)
 				pZNC->AddTrustedProxy(sProxy);
 			return true;
 		},
-		// TODO: reset
-		nullptr
+		[](CZNC* pZNC, CString& sError) {
+			pZNC->ClearTrustedProxies();
+			return true;
+		}
 	},
 };
 
@@ -430,7 +435,12 @@ static const std::vector<Variable<CUser>> UserVars = {
 			}
 			return true;
 		},
-		nullptr
+		[](CUser* pUser, CString& sError) {
+			MCString mReplies = pUser->GetCTCPReplies();
+			for (const auto& it : mReplies)
+				pUser->DelCTCPReply(it.first);
+			return true;
+		}
 	},
 	{
 		"DCCBindHost", StringType,
