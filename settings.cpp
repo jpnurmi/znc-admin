@@ -723,7 +723,10 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 			pNetwork->SetAltNick(sVal);
 			return true;
 		},
-		nullptr
+		[](CIRCNetwork* pNetwork, CString& sError) {
+			pNetwork->SetAltNick("");
+			return true;
+		}
 	},
 	{
 		"BindHost", StringType,
@@ -763,7 +766,10 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 			pNetwork->SetBindHost(sVal);
 			return true;
 		},
-		nullptr
+		[](CIRCNetwork* pNetwork, CString& sError) {
+			pNetwork->SetBindHost("");
+			return true;
+		}
 	},
 #ifdef HAVE_ICU
 	{
@@ -776,7 +782,10 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 			pNetwork->SetEncoding(sVal);
 			return true;
 		},
-		nullptr
+		[](CIRCNetwork* pNetwork, CString& sError) {
+			pNetwork->SetEncoding("");
+			return true;
+		}
 	},
 #endif
 	{
@@ -789,7 +798,10 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 			pNetwork->SetFloodBurst(sVal.ToUShort());
 			return true;
 		},
-		nullptr
+		[](CIRCNetwork* pNetwork, CString& sError) {
+			pNetwork->SetFloodBurst(4); // TODO: expose the default constant?
+			return true;
+		}
 	},
 	{
 		"FloodRate", DoubleType,
@@ -801,7 +813,10 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 			pNetwork->SetFloodRate(sVal.ToDouble());
 			return true;
 		},
-		nullptr
+		[](CIRCNetwork* pNetwork, CString& sError) {
+			pNetwork->SetFloodRate(1); // TODO: expose the default constant?
+			return true;
+		}
 	},
 	{
 		"Ident", StringType,
@@ -813,7 +828,10 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 			pNetwork->SetIdent(sVal);
 			return true;
 		},
-		nullptr
+		[](CIRCNetwork* pNetwork, CString& sError) {
+			pNetwork->SetIdent("");
+			return true;
+		}
 	},
 	// TODO: IRCConnectEnabled?
 	{
@@ -826,7 +844,10 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 			pNetwork->SetJoinDelay(sVal.ToUShort());
 			return true;
 		},
-		nullptr
+		[](CIRCNetwork* pNetwork, CString& sError) {
+			pNetwork->SetJoinDelay(0);
+			return true;
+		}
 	},
 	{
 		"Nick", StringType,
@@ -838,7 +859,10 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 			pNetwork->SetNick(sVal);
 			return true;
 		},
-		nullptr
+		[](CIRCNetwork* pNetwork, CString& sError) {
+			pNetwork->SetNick("");
+			return true;
+		}
 	},
 	{
 		"QuitMsg", StringType,
@@ -850,7 +874,10 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 			pNetwork->SetQuitMsg(sVal);
 			return true;
 		},
-		nullptr
+		[](CIRCNetwork* pNetwork, CString& sError) {
+			pNetwork->SetQuitMsg("");
+			return true;
+		}
 	},
 	{
 		"RealName", StringType,
@@ -862,7 +889,10 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 			pNetwork->SetRealName(sVal);
 			return true;
 		},
-		nullptr
+		[](CIRCNetwork* pNetwork, CString& sError) {
+			pNetwork->SetRealName("");
+			return true;
+		}
 	},
 };
 
