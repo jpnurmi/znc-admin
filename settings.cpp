@@ -84,43 +84,8 @@ struct Variable
 };
 
 static const std::vector<Variable<CUser>> UserVars = {
-	{
-		"CTCPReply", ListType,
-		"A list of CTCP request-reply-pairs. Syntax: <request> <reply>.",
-		[](const CUser* pUser) {
-			VCString vsReplies;
-			for (const auto& it : pUser->GetCTCPReplies())
-				vsReplies.push_back(it.first + " " + it.second);
-			return CString("\n").Join(vsReplies.begin(), vsReplies.end());
-		},
-		[](CUser* pUser, const CString& sVal, CString& sError) {
-			CString sRequest = sVal.Token(0);
-			CString sReply = sVal.Token(1, true);
-			if (sReply.empty()) {
-				if (!pUser->DelCTCPReply(sRequest.AsUpper())) {
-					sError = "Error: unable to remove!";
-					return false;
-				}
-			} else {
-				if (!pUser->AddCTCPReply(sRequest, sReply)) {
-					sError = "Error: unable to add!";
-					return false;
-				}
-			}
-			return true;
-		}
-	},
-	{
-		"Nick", StringType,
-		"The default primary nick.",
-		[](const CUser* pUser) {
-			return pUser->GetNick();
-		},
-		[](CUser* pUser, const CString& sVal, CString& sError) {
-			pUser->SetNick(sVal);
-			return true;
-		}
-	},
+	// TODO: Admin?
+	// TODO: Allow?
 	{
 		"AltNick", StringType,
 		"The default alternate nick",
@@ -133,24 +98,35 @@ static const std::vector<Variable<CUser>> UserVars = {
 		}
 	},
 	{
-		"Ident", StringType,
-		"The default ident.",
+		"AppendTimestamp", BoolType,
+		"Whether timestamps are appended to buffer playback messages.",
 		[](const CUser* pUser) {
-			return pUser->GetIdent();
+			return CString(pUser->GetTimestampAppend());
 		},
 		[](CUser* pUser, const CString& sVal, CString& sError) {
-			pUser->SetIdent(sVal);
+			pUser->SetTimestampAppend(sVal.ToBool());
 			return true;
 		}
 	},
 	{
-		"RealName", StringType,
-		"The default real name.",
+		"AutoClearChanBuffer", BoolType,
+		"Whether channel buffers are automatically cleared after playback.",
 		[](const CUser* pUser) {
-			return pUser->GetRealName();
+			return CString(pUser->AutoClearChanBuffer());
 		},
 		[](CUser* pUser, const CString& sVal, CString& sError) {
-			pUser->SetRealName(sVal);
+			pUser->SetAutoClearChanBuffer(sVal.ToBool());
+			return true;
+		}
+	},
+	{
+		"AutoClearQueryBuffer", BoolType,
+		"Whether query buffers are automatically cleared after playback.",
+		[](const CUser* pUser) {
+			return CString(pUser->AutoClearQueryBuffer());
+		},
+		[](CUser* pUser, const CString& sVal, CString& sError) {
+			pUser->SetAutoClearQueryBuffer(sVal.ToBool());
 			return true;
 		}
 	},
@@ -194,13 +170,82 @@ static const std::vector<Variable<CUser>> UserVars = {
 		}
 	},
 	{
-		"MultiClients", BoolType,
-		"Whether multiple clients are allowed to connect simultaneously.",
+		"ChanBufferSize", IntType,
+		"The maximum amount of lines stored for each channel playback buffer.",
 		[](const CUser* pUser) {
-			return CString(pUser->MultiClients());
+			return CString(pUser->GetChanBufferSize());
 		},
 		[](CUser* pUser, const CString& sVal, CString& sError) {
-			pUser->SetMultiClients(sVal.ToBool());
+			unsigned int i = sVal.ToUInt();
+			if (!pUser->SetChanBufferSize(i, pUser->IsAdmin())) {
+				sError = "Setting failed, limit is " + CString(CZNC::Get().GetMaxBufferSize());
+				return false;
+			}
+			return true;
+		}
+	},
+	{
+		"ChanModes", StringType,
+		"The default modes ZNC sets when joining an empty channel.",
+		[](const CUser* pUser) {
+			return pUser->GetDefaultChanModes();
+		},
+		[](CUser* pUser, const CString& sVal, CString& sError) {
+			pUser->SetDefaultChanModes(sVal);
+			return true;
+		}
+	},
+#ifdef HAVE_ICU
+	{
+		"ClientEncoding", StringType,
+		"The default client encoding.",
+		[](const CUser* pUser) {
+			return pUser->GetClientEncoding();
+		},
+		[](CUser* pUser, const CString& sVal, CString& sError) {
+			pUser->SetClientEncoding(sVal);
+			return true;
+		}
+	},
+#endif
+	{
+		"CTCPReply", ListType,
+		"A list of CTCP request-reply-pairs. Syntax: <request> <reply>.",
+		[](const CUser* pUser) {
+			VCString vsReplies;
+			for (const auto& it : pUser->GetCTCPReplies())
+				vsReplies.push_back(it.first + " " + it.second);
+			return CString("\n").Join(vsReplies.begin(), vsReplies.end());
+		},
+		[](CUser* pUser, const CString& sVal, CString& sError) {
+			CString sRequest = sVal.Token(0);
+			CString sReply = sVal.Token(1, true);
+			if (sReply.empty()) {
+				if (!pUser->DelCTCPReply(sRequest.AsUpper())) {
+					sError = "Error: unable to remove!";
+					return false;
+				}
+			} else {
+				if (!pUser->AddCTCPReply(sRequest, sReply)) {
+					sError = "Error: unable to add!";
+					return false;
+				}
+			}
+			return true;
+		}
+	},
+	{
+		"DCCBindHost", StringType,
+		"An optional bindhost for DCC connections.",
+		[](const CUser* pUser) {
+			return pUser->GetDCCBindHost();
+		},
+		[](CUser* pUser, const CString& sVal, CString& sError) {
+			if (!pUser->IsAdmin()) {
+				sError = "Error: access denied";
+				return false;
+			}
+			pUser->SetDCCBindHost(sVal);
 			return true;
 		}
 	},
@@ -235,89 +280,13 @@ static const std::vector<Variable<CUser>> UserVars = {
 		}
 	},
 	{
-		"ChanModes", StringType,
-		"The default modes ZNC sets when joining an empty channel.",
+		"Ident", StringType,
+		"The default ident.",
 		[](const CUser* pUser) {
-			return pUser->GetDefaultChanModes();
+			return pUser->GetIdent();
 		},
 		[](CUser* pUser, const CString& sVal, CString& sError) {
-			pUser->SetDefaultChanModes(sVal);
-			return true;
-		}
-	},
-	{
-		"QuitMsg", StringType,
-		"The default quit message ZNC uses when disconnecting or shutting down.",
-		[](const CUser* pUser) {
-			return pUser->GetQuitMsg();
-		},
-		[](CUser* pUser, const CString& sVal, CString& sError) {
-			pUser->SetQuitMsg(sVal);
-			return true;
-		}
-	},
-	{
-		"ChanBufferSize", IntType,
-		"The maximum amount of lines stored for each channel playback buffer.",
-		[](const CUser* pUser) {
-			return CString(pUser->GetChanBufferSize());
-		},
-		[](CUser* pUser, const CString& sVal, CString& sError) {
-			unsigned int i = sVal.ToUInt();
-			if (!pUser->SetChanBufferSize(i, pUser->IsAdmin())) {
-				sError = "Setting failed, limit is " + CString(CZNC::Get().GetMaxBufferSize());
-				return false;
-			}
-			return true;
-		}
-	},
-	{
-		"QueryBufferSize", IntType,
-		"The maximum amount of lines stored for each query playback buffer.",
-		[](const CUser* pUser) {
-			return CString(pUser->GetQueryBufferSize());
-		},
-		[](CUser* pUser, const CString& sVal, CString& sError) {
-			unsigned int i = sVal.ToUInt();
-			if (!pUser->SetQueryBufferSize(i, pUser->IsAdmin())) {
-				sError = "Setting failed, limit is " + CString(CZNC::Get().GetMaxBufferSize());
-				return false;
-			}
-			return true;
-		}
-	},
-	{
-		"AutoClearChanBuffer", BoolType,
-		"Whether channel buffers are automatically cleared after playback.",
-		[](const CUser* pUser) {
-			return CString(pUser->AutoClearChanBuffer());
-		},
-		[](CUser* pUser, const CString& sVal, CString& sError) {
-			pUser->SetAutoClearChanBuffer(sVal.ToBool());
-			return true;
-		}
-	},
-	{
-		"AutoClearQueryBuffer", BoolType,
-		"Whether query buffers are automatically cleared after playback.",
-		[](const CUser* pUser) {
-			return CString(pUser->AutoClearQueryBuffer());
-		},
-		[](CUser* pUser, const CString& sVal, CString& sError) {
-			pUser->SetAutoClearQueryBuffer(sVal.ToBool());
-			return true;
-		}
-	},
-	{
-		"Password", StringType,
-		"",
-		[](const CUser* pUser) {
-			return CString(".", pUser->GetPass().size());
-		},
-		[](CUser* pUser, const CString& sVal, CString& sError) {
-			const CString sSalt = CUtils::GetSalt();
-			const CString sHash = CUser::SaltedHash(sVal, sSalt);
-			pUser->SetPass(sHash, CUser::HASH_DEFAULT, sSalt);
+			pUser->SetIdent(sVal);
 			return true;
 		}
 	},
@@ -370,24 +339,24 @@ static const std::vector<Variable<CUser>> UserVars = {
 		}
 	},
 	{
-		"Timezone", StringType,
-		"The timezone used for timestamps in buffer playback messages.",
+		"MultiClients", BoolType,
+		"Whether multiple clients are allowed to connect simultaneously.",
 		[](const CUser* pUser) {
-			return pUser->GetTimezone();
+			return CString(pUser->MultiClients());
 		},
 		[](CUser* pUser, const CString& sVal, CString& sError) {
-			pUser->SetTimezone(sVal);
+			pUser->SetMultiClients(sVal.ToBool());
 			return true;
 		}
 	},
 	{
-		"AppendTimestamp", BoolType,
-		"Whether timestamps are appended to buffer playback messages.",
+		"Nick", StringType,
+		"The default primary nick.",
 		[](const CUser* pUser) {
-			return CString(pUser->GetTimestampAppend());
+			return pUser->GetNick();
 		},
 		[](CUser* pUser, const CString& sVal, CString& sError) {
-			pUser->SetTimestampAppend(sVal.ToBool());
+			pUser->SetNick(sVal);
 			return true;
 		}
 	},
@@ -403,31 +372,56 @@ static const std::vector<Variable<CUser>> UserVars = {
 		}
 	},
 	{
-		"TimestampFormat", StringType,
-		"The format of the timestamps used in buffer playback messages.",
+		"Password", StringType,
+		"",
 		[](const CUser* pUser) {
-			return pUser->GetTimestampFormat();
+			return CString(".", pUser->GetPass().size());
 		},
 		[](CUser* pUser, const CString& sVal, CString& sError) {
-			pUser->SetTimestampFormat(sVal);
+			const CString sSalt = CUtils::GetSalt();
+			const CString sHash = CUser::SaltedHash(sVal, sSalt);
+			pUser->SetPass(sHash, CUser::HASH_DEFAULT, sSalt);
 			return true;
 		}
 	},
 	{
-		"DCCBindHost", StringType,
-		"An optional bindhost for DCC connections.",
+		"QueryBufferSize", IntType,
+		"The maximum amount of lines stored for each query playback buffer.",
 		[](const CUser* pUser) {
-			return pUser->GetDCCBindHost();
+			return CString(pUser->GetQueryBufferSize());
 		},
 		[](CUser* pUser, const CString& sVal, CString& sError) {
-			if (!pUser->IsAdmin()) {
-				sError = "Error: access denied";
+			unsigned int i = sVal.ToUInt();
+			if (!pUser->SetQueryBufferSize(i, pUser->IsAdmin())) {
+				sError = "Setting failed, limit is " + CString(CZNC::Get().GetMaxBufferSize());
 				return false;
 			}
-			pUser->SetDCCBindHost(sVal);
 			return true;
 		}
 	},
+	{
+		"QuitMsg", StringType,
+		"The default quit message ZNC uses when disconnecting or shutting down.",
+		[](const CUser* pUser) {
+			return pUser->GetQuitMsg();
+		},
+		[](CUser* pUser, const CString& sVal, CString& sError) {
+			pUser->SetQuitMsg(sVal);
+			return true;
+		}
+	},
+	{
+		"RealName", StringType,
+		"The default real name.",
+		[](const CUser* pUser) {
+			return pUser->GetRealName();
+		},
+		[](CUser* pUser, const CString& sVal, CString& sError) {
+			pUser->SetRealName(sVal);
+			return true;
+		}
+	},
+	// TODO: Skin?
 	{
 		"StatusPrefix", StringType,
 		"The prefix for status and module queries.",
@@ -439,33 +433,31 @@ static const std::vector<Variable<CUser>> UserVars = {
 			return true;
 		}
 	},
-#ifdef HAVE_ICU
 	{
-		"ClientEncoding", StringType,
-		"The default client encoding.",
+		"TimestampFormat", StringType,
+		"The format of the timestamps used in buffer playback messages.",
 		[](const CUser* pUser) {
-			return pUser->GetClientEncoding();
+			return pUser->GetTimestampFormat();
 		},
 		[](CUser* pUser, const CString& sVal, CString& sError) {
-			pUser->SetClientEncoding(sVal);
+			pUser->SetTimestampFormat(sVal);
 			return true;
 		}
 	},
-#endif
+	{
+		"Timezone", StringType,
+		"The timezone used for timestamps in buffer playback messages.",
+		[](const CUser* pUser) {
+			return pUser->GetTimezone();
+		},
+		[](CUser* pUser, const CString& sVal, CString& sError) {
+			pUser->SetTimezone(sVal);
+			return true;
+		}
+	},
 };
 
 static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
-	{
-		"Nick", StringType,
-		"An optional network specific primary nick.",
-		[](const CIRCNetwork* pNetwork) {
-			return pNetwork->GetNick();
-		},
-		[](CIRCNetwork* pNetwork, const CString& sVal, CString& sError) {
-			pNetwork->SetNick(sVal);
-			return true;
-		}
-	},
 	{
 		"AltNick", StringType,
 		"An optional network specific alternate nick used if the primary nick is reserved.",
@@ -474,28 +466,6 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 		},
 		[](CIRCNetwork* pNetwork, const CString& sVal, CString& sError) {
 			pNetwork->SetAltNick(sVal);
-			return true;
-		}
-	},
-	{
-		"Ident", StringType,
-		"An optional network specific ident.",
-		[](const CIRCNetwork* pNetwork) {
-			return pNetwork->GetIdent();
-		},
-		[](CIRCNetwork* pNetwork, const CString& sVal, CString& sError) {
-			pNetwork->SetIdent(sVal);
-			return true;
-		}
-	},
-	{
-		"RealName", StringType,
-		"An optional network specific real name.",
-		[](const CIRCNetwork* pNetwork) {
-			return pNetwork->GetRealName();
-		},
-		[](CIRCNetwork* pNetwork, const CString& sVal, CString& sError) {
-			pNetwork->SetRealName(sVal);
 			return true;
 		}
 	},
@@ -538,39 +508,6 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 			return true;
 		}
 	},
-	{
-		"FloodRate", DoubleType,
-		"The number of lines per second ZNC sends after reaching the FloodBurst limit.",
-		[](const CIRCNetwork* pNetwork) {
-			return CString(pNetwork->GetFloodRate());
-		},
-		[](CIRCNetwork* pNetwork, const CString& sVal, CString& sError) {
-			pNetwork->SetFloodRate(sVal.ToDouble());
-			return true;
-		}
-	},
-	{
-		"FloodBurst", IntType,
-		"The maximum amount of lines ZNC sends at once.",
-		[](const CIRCNetwork* pNetwork) {
-			return CString(pNetwork->GetFloodBurst());
-		},
-		[](CIRCNetwork* pNetwork, const CString& sVal, CString& sError) {
-			pNetwork->SetFloodBurst(sVal.ToUShort());
-			return true;
-		}
-	},
-	{
-		"JoinDelay", IntType,
-		"The delay in seconds, until channels are joined after getting connected.",
-		[](const CIRCNetwork* pNetwork) {
-			return CString(pNetwork->GetJoinDelay());
-		},
-		[](CIRCNetwork* pNetwork, const CString& sVal, CString& sError) {
-			pNetwork->SetJoinDelay(sVal.ToUShort());
-			return true;
-		}
-	},
 #ifdef HAVE_ICU
 	{
 		"Encoding", StringType,
@@ -585,6 +522,62 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 	},
 #endif
 	{
+		"FloodBurst", IntType,
+		"The maximum amount of lines ZNC sends at once.",
+		[](const CIRCNetwork* pNetwork) {
+			return CString(pNetwork->GetFloodBurst());
+		},
+		[](CIRCNetwork* pNetwork, const CString& sVal, CString& sError) {
+			pNetwork->SetFloodBurst(sVal.ToUShort());
+			return true;
+		}
+	},
+	{
+		"FloodRate", DoubleType,
+		"The number of lines per second ZNC sends after reaching the FloodBurst limit.",
+		[](const CIRCNetwork* pNetwork) {
+			return CString(pNetwork->GetFloodRate());
+		},
+		[](CIRCNetwork* pNetwork, const CString& sVal, CString& sError) {
+			pNetwork->SetFloodRate(sVal.ToDouble());
+			return true;
+		}
+	},
+	{
+		"Ident", StringType,
+		"An optional network specific ident.",
+		[](const CIRCNetwork* pNetwork) {
+			return pNetwork->GetIdent();
+		},
+		[](CIRCNetwork* pNetwork, const CString& sVal, CString& sError) {
+			pNetwork->SetIdent(sVal);
+			return true;
+		}
+	},
+	// TODO: IRCConnectEnabled?
+	{
+		"JoinDelay", IntType,
+		"The delay in seconds, until channels are joined after getting connected.",
+		[](const CIRCNetwork* pNetwork) {
+			return CString(pNetwork->GetJoinDelay());
+		},
+		[](CIRCNetwork* pNetwork, const CString& sVal, CString& sError) {
+			pNetwork->SetJoinDelay(sVal.ToUShort());
+			return true;
+		}
+	},
+	{
+		"Nick", StringType,
+		"An optional network specific primary nick.",
+		[](const CIRCNetwork* pNetwork) {
+			return pNetwork->GetNick();
+		},
+		[](CIRCNetwork* pNetwork, const CString& sVal, CString& sError) {
+			pNetwork->SetNick(sVal);
+			return true;
+		}
+	},
+	{
 		"QuitMsg", StringType,
 		"An optional network specific quit message ZNC uses when disconnecting or shutting down.",
 		[](const CIRCNetwork* pNetwork) {
@@ -595,28 +588,34 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 			return true;
 		}
 	},
+	{
+		"RealName", StringType,
+		"An optional network specific real name.",
+		[](const CIRCNetwork* pNetwork) {
+			return pNetwork->GetRealName();
+		},
+		[](CIRCNetwork* pNetwork, const CString& sVal, CString& sError) {
+			pNetwork->SetRealName(sVal);
+			return true;
+		}
+	},
 };
 
 static const std::vector<Variable<CChan>> ChanVars = {
 	{
-		"DefaultModes", StringType,
-		"An optional set of default channel modes ZNC sets when joining an empty channel.",
+		"AutoClearChanBuffer", BoolType,
+		"Whether the channel buffer is automatically cleared after playback.",
 		[](const CChan* pChan) {
-			return pChan->GetDefaultModes();
+			CString sVal(pChan->AutoClearChanBuffer());
+			if (!pChan->HasAutoClearChanBufferSet())
+				sVal += " (default)";
+			return sVal;
 		},
 		[](CChan* pChan, const CString& sVal, CString& sError) {
-			pChan->SetDefaultModes(sVal);
-			return true;
-		}
-	},
-	{
-		"Key", StringType,
-		"An optional channel key.",
-		[](const CChan* pChan) {
-			return pChan->GetKey();
-		},
-		[](CChan* pChan, const CString& sVal, CString& sError) {
-			pChan->SetKey(sVal);
+			if (sVal.Equals("-"))
+				pChan->ResetAutoClearChanBuffer();
+			else
+				pChan->SetAutoClearChanBuffer(sVal.ToBool());
 			return true;
 		}
 	},
@@ -639,34 +638,6 @@ static const std::vector<Variable<CChan>> ChanVars = {
 		}
 	},
 	{
-		"InConfig", BoolType,
-		"Whether the channel is stored in the config file.",
-		[](const CChan* pChan) {
-			return CString(pChan->InConfig());
-		},
-		[](CChan* pChan, const CString& sVal, CString& sError) {
-			pChan->SetInConfig(sVal.ToBool());
-			return true;
-		}
-	},
-	{
-		"AutoClearChanBuffer", BoolType,
-		"Whether the channel specific buffer is automatically cleared after playback.",
-		[](const CChan* pChan) {
-			CString sVal(pChan->AutoClearChanBuffer());
-			if (!pChan->HasAutoClearChanBufferSet())
-				sVal += " (default)";
-			return sVal;
-		},
-		[](CChan* pChan, const CString& sVal, CString& sError) {
-			if (sVal.Equals("-"))
-				pChan->ResetAutoClearChanBuffer();
-			else
-				pChan->SetAutoClearChanBuffer(sVal.ToBool());
-			return true;
-		}
-	},
-	{
 		"Detached", BoolType,
 		"Whether the channel is detached.",
 		[](const CChan* pChan) {
@@ -680,6 +651,40 @@ static const std::vector<Variable<CChan>> ChanVars = {
 				else
 					pChan->AttachUser();
 			}
+			return true;
+		}
+	},
+	// TODO: Disabled?
+	{
+		"InConfig", BoolType,
+		"Whether the channel is stored in the config file.",
+		[](const CChan* pChan) {
+			return CString(pChan->InConfig());
+		},
+		[](CChan* pChan, const CString& sVal, CString& sError) {
+			pChan->SetInConfig(sVal.ToBool());
+			return true;
+		}
+	},
+	{
+		"Key", StringType,
+		"An optional channel key.",
+		[](const CChan* pChan) {
+			return pChan->GetKey();
+		},
+		[](CChan* pChan, const CString& sVal, CString& sError) {
+			pChan->SetKey(sVal);
+			return true;
+		}
+	},
+	{
+		"Modes", StringType,
+		"An optional set of default channel modes ZNC sets when joining an empty channel.",
+		[](const CChan* pChan) {
+			return pChan->GetDefaultModes();
+		},
+		[](CChan* pChan, const CString& sVal, CString& sError) {
+			pChan->SetDefaultModes(sVal);
 			return true;
 		}
 	},
