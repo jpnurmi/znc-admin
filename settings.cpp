@@ -877,13 +877,13 @@ static const std::vector<Variable<CChan>> ChanVars = {
 			return sVal;
 		},
 		[](CChan* pChan, const CString& sVal, CString& sError) {
-			if (sVal.Equals("-"))
-				pChan->ResetAutoClearChanBuffer();
-			else
-				pChan->SetAutoClearChanBuffer(sVal.ToBool());
+			pChan->SetAutoClearChanBuffer(sVal.ToBool());
 			return true;
 		},
-		nullptr
+		[](CChan* pChan, CString& sError) {
+			pChan->ResetAutoClearChanBuffer();
+			return true;
+		}
 	},
 	{
 		"Buffer", IntType,
@@ -895,14 +895,14 @@ static const std::vector<Variable<CChan>> ChanVars = {
 			return sVal;
 		},
 		[](CChan* pChan, const CString& sVal, CString& sError) {
-			unsigned int i = sVal.ToUInt();
-			if (sVal.Equals("-"))
-				pChan->ResetBufferCount();
-			else if (!pChan->SetBufferCount(i, pChan->GetNetwork()->GetUser()->IsAdmin()))
+			if (!pChan->SetBufferCount(sVal.ToUInt(), pChan->GetNetwork()->GetUser()->IsAdmin()))
 				sError = "Setting failed, the limit is " + CString(CZNC::Get().GetMaxBufferSize());
 			return sError.empty();
 		},
-		nullptr
+		[](CChan* pChan, CString& sError) {
+			pChan->ResetBufferCount();
+			return true;
+		}
 	},
 	{
 		"Detached", BoolType,
@@ -920,7 +920,11 @@ static const std::vector<Variable<CChan>> ChanVars = {
 			}
 			return true;
 		},
-		nullptr
+		[](CChan* pChan, CString& sError) {
+			if (pChan->IsDetached())
+				pChan->AttachUser();
+			return true;
+		}
 	},
 	{
 		"Disabled", BoolType,
@@ -938,7 +942,11 @@ static const std::vector<Variable<CChan>> ChanVars = {
 			}
 			return true;
 		},
-		nullptr
+		[](CChan* pChan, CString& sError) {
+			if (pChan->IsDisabled())
+				pChan->Enable();
+			return true;
+		}
 	},
 	{
 		"InConfig", BoolType,
@@ -962,7 +970,10 @@ static const std::vector<Variable<CChan>> ChanVars = {
 			pChan->SetKey(sVal);
 			return true;
 		},
-		nullptr
+		[](CChan* pChan, CString& sError) {
+			pChan->SetKey("");
+			return true;
+		}
 	},
 	{
 		"Modes", StringType,
@@ -974,7 +985,10 @@ static const std::vector<Variable<CChan>> ChanVars = {
 			pChan->SetDefaultModes(sVal);
 			return true;
 		},
-		nullptr
+		[](CChan* pChan, CString& sError) {
+			pChan->SetDefaultModes("");
+			return true;
+		}
 	},
 };
 
