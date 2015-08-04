@@ -34,6 +34,7 @@ public:
 		AddCommand("Get", nullptr, "<variable>", "Gets the value of a variable.");
 		AddCommand("List", nullptr, "[filter]", "Lists available variables filtered by name or type.");
 		AddCommand("Set", nullptr, "<variable> <value>", "Sets the value of a variable.");
+		AddCommand("Reset", nullptr, "<variable>", "Resets the value(s) of a variable.");
 	}
 
 	void OnModCommand(const CString& sLine) override;
@@ -57,6 +58,8 @@ private:
 	void OnGetCommand(T* pTarget, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars);
 	template <typename T, typename V>
 	void OnSetCommand(T* pTarget, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars);
+	template <typename T, typename V>
+	void OnResetCommand(T* pTarget, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars);
 
 	CTable FilterCmdTable(const CString& sFilter) const;
 	template <typename V>
@@ -82,6 +85,7 @@ struct Variable
 	CString description;
 	std::function<CString(const T*)> getter;
 	std::function<bool(T*, const CString&, CString&)> setter;
+	std::function<bool(T*, CString&)> resetter;
 };
 
 static const std::vector<Variable<CZNC>> GlobalVars = {
@@ -94,7 +98,8 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 		[](CZNC* pZNC, const CString& sVal, CString& sError) {
 			pZNC->SetAnonIPLimit(sVal.ToUInt());
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"BindHost", ListType,
@@ -110,7 +115,8 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 			for (const CString& sHost : ssHosts)
 				pZNC->AddBindHost(sHost);
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"ConnectDelay", IntType,
@@ -121,7 +127,8 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 		[](CZNC* pZNC, const CString& sVal, CString& sError) {
 			pZNC->SetConnectDelay(sVal.ToUInt());
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"HideVersion", BoolType,
@@ -132,7 +139,8 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 		[](CZNC* pZNC, const CString& sVal, CString& sError) {
 			pZNC->SetHideVersion(sVal.ToBool());
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"MaxBufferSize", IntType,
@@ -143,7 +151,8 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 		[](CZNC* pZNC, const CString& sVal, CString& sError) {
 			pZNC->SetMaxBufferSize(sVal.ToUInt());
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"Motd", ListType,
@@ -156,7 +165,8 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 			// TODO: multiple lines
 			pZNC->SetMotd(sVal);
 			return true;
-		}
+		},
+		nullptr
 	},
 	// TODO: PidFile
 	{
@@ -168,7 +178,8 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 		[](CZNC* pZNC, const CString& sVal, CString& sError) {
 			pZNC->SetProtectWebSessions(sVal.ToBool());
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"ServerThrottle", IntType,
@@ -179,7 +190,8 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 		[](CZNC* pZNC, const CString& sVal, CString& sError) {
 			pZNC->SetServerThrottle(sVal.ToUInt());
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"Skin", StringType,
@@ -190,7 +202,8 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 		[](CZNC* pZNC, const CString& sVal, CString& sError) {
 			pZNC->SetSkinName(sVal);
 			return true;
-		}
+		},
+		nullptr
 	},
 	// TODO: SSLCertFile
 	// TODO: SSLCiphers
@@ -204,7 +217,8 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 		[](CZNC* pZNC, const CString& sVal, CString& sError) {
 			pZNC->SetSkinName(sVal);
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"TrustedProxy", ListType,
@@ -220,8 +234,9 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 			for (const CString& sProxy : ssProxies)
 				pZNC->AddTrustedProxy(sProxy);
 			return true;
-		}
-		// TODO: clear
+		},
+		// TODO: reset
+		nullptr
 	},
 };
 
@@ -240,7 +255,8 @@ static const std::vector<Variable<CUser>> UserVars = {
 
 			pUser->SetAdmin(sVal.ToBool());
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"Allow", ListType,
@@ -256,7 +272,8 @@ static const std::vector<Variable<CUser>> UserVars = {
 			for (const CString& sHost : ssHosts)
 				pUser->AddAllowedHost(sHost);
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"AltNick", StringType,
@@ -267,7 +284,8 @@ static const std::vector<Variable<CUser>> UserVars = {
 		[](CUser* pUser, const CString& sVal, CString& sError) {
 			pUser->SetAltNick(sVal);
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"AppendTimestamp", BoolType,
@@ -278,7 +296,8 @@ static const std::vector<Variable<CUser>> UserVars = {
 		[](CUser* pUser, const CString& sVal, CString& sError) {
 			pUser->SetTimestampAppend(sVal.ToBool());
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"AutoClearChanBuffer", BoolType,
@@ -289,7 +308,8 @@ static const std::vector<Variable<CUser>> UserVars = {
 		[](CUser* pUser, const CString& sVal, CString& sError) {
 			pUser->SetAutoClearChanBuffer(sVal.ToBool());
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"AutoClearQueryBuffer", BoolType,
@@ -300,7 +320,8 @@ static const std::vector<Variable<CUser>> UserVars = {
 		[](CUser* pUser, const CString& sVal, CString& sError) {
 			pUser->SetAutoClearQueryBuffer(sVal.ToBool());
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"BindHost", StringType,
@@ -339,7 +360,8 @@ static const std::vector<Variable<CUser>> UserVars = {
 
 			pUser->SetBindHost(sVal);
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"ChanBufferSize", IntType,
@@ -354,7 +376,8 @@ static const std::vector<Variable<CUser>> UserVars = {
 				return false;
 			}
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"ChanModes", StringType,
@@ -365,7 +388,8 @@ static const std::vector<Variable<CUser>> UserVars = {
 		[](CUser* pUser, const CString& sVal, CString& sError) {
 			pUser->SetDefaultChanModes(sVal);
 			return true;
-		}
+		},
+		nullptr
 	},
 #ifdef HAVE_ICU
 	{
@@ -377,7 +401,8 @@ static const std::vector<Variable<CUser>> UserVars = {
 		[](CUser* pUser, const CString& sVal, CString& sError) {
 			pUser->SetClientEncoding(sVal);
 			return true;
-		}
+		},
+		nullptr
 	},
 #endif
 	{
@@ -404,7 +429,8 @@ static const std::vector<Variable<CUser>> UserVars = {
 				}
 			}
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"DCCBindHost", StringType,
@@ -419,7 +445,8 @@ static const std::vector<Variable<CUser>> UserVars = {
 			}
 			pUser->SetDCCBindHost(sVal);
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"DenyLoadMod", BoolType,
@@ -434,7 +461,8 @@ static const std::vector<Variable<CUser>> UserVars = {
 			}
 			pUser->SetDenyLoadMod(sVal.ToBool());
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"DenySetBindHost", BoolType,
@@ -449,7 +477,8 @@ static const std::vector<Variable<CUser>> UserVars = {
 			}
 			pUser->SetDenySetBindHost(sVal.ToBool());
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"Ident", StringType,
@@ -460,7 +489,8 @@ static const std::vector<Variable<CUser>> UserVars = {
 		[](CUser* pUser, const CString& sVal, CString& sError) {
 			pUser->SetIdent(sVal);
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"JoinTries", IntType,
@@ -471,7 +501,8 @@ static const std::vector<Variable<CUser>> UserVars = {
 		[](CUser* pUser, const CString& sVal, CString& sError) {
 			pUser->SetJoinTries(sVal.ToUInt());
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"MaxJoins", IntType,
@@ -482,7 +513,8 @@ static const std::vector<Variable<CUser>> UserVars = {
 		[](CUser* pUser, const CString& sVal, CString& sError) {
 			pUser->SetMaxJoins(sVal.ToUInt());
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"MaxNetworks", IntType,
@@ -497,7 +529,8 @@ static const std::vector<Variable<CUser>> UserVars = {
 			}
 			pUser->SetMaxNetworks(sVal.ToUInt());
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"MaxQueryBuffers", IntType,
@@ -508,7 +541,8 @@ static const std::vector<Variable<CUser>> UserVars = {
 		[](CUser* pUser, const CString& sVal, CString& sError) {
 			pUser->SetMaxQueryBuffers(sVal.ToUInt());
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"MultiClients", BoolType,
@@ -519,7 +553,8 @@ static const std::vector<Variable<CUser>> UserVars = {
 		[](CUser* pUser, const CString& sVal, CString& sError) {
 			pUser->SetMultiClients(sVal.ToBool());
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"Nick", StringType,
@@ -530,7 +565,8 @@ static const std::vector<Variable<CUser>> UserVars = {
 		[](CUser* pUser, const CString& sVal, CString& sError) {
 			pUser->SetNick(sVal);
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"PrependTimestamp", BoolType,
@@ -541,7 +577,8 @@ static const std::vector<Variable<CUser>> UserVars = {
 		[](CUser* pUser, const CString& sVal, CString& sError) {
 			pUser->SetTimestampPrepend(sVal.ToBool());
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"Password", StringType,
@@ -554,7 +591,8 @@ static const std::vector<Variable<CUser>> UserVars = {
 			const CString sHash = CUser::SaltedHash(sVal, sSalt);
 			pUser->SetPass(sHash, CUser::HASH_DEFAULT, sSalt);
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"QueryBufferSize", IntType,
@@ -569,7 +607,8 @@ static const std::vector<Variable<CUser>> UserVars = {
 				return false;
 			}
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"QuitMsg", StringType,
@@ -580,7 +619,8 @@ static const std::vector<Variable<CUser>> UserVars = {
 		[](CUser* pUser, const CString& sVal, CString& sError) {
 			pUser->SetQuitMsg(sVal);
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"RealName", StringType,
@@ -591,7 +631,8 @@ static const std::vector<Variable<CUser>> UserVars = {
 		[](CUser* pUser, const CString& sVal, CString& sError) {
 			pUser->SetRealName(sVal);
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"Skin", StringType,
@@ -602,7 +643,8 @@ static const std::vector<Variable<CUser>> UserVars = {
 		[](CUser* pUser, const CString& sVal, CString& sError) {
 			pUser->SetSkinName(sVal);
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"StatusPrefix", StringType,
@@ -613,7 +655,8 @@ static const std::vector<Variable<CUser>> UserVars = {
 		[](CUser* pUser, const CString& sVal, CString& sError) {
 			pUser->SetStatusPrefix(sVal);
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"TimestampFormat", StringType,
@@ -624,7 +667,8 @@ static const std::vector<Variable<CUser>> UserVars = {
 		[](CUser* pUser, const CString& sVal, CString& sError) {
 			pUser->SetTimestampFormat(sVal);
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"Timezone", StringType,
@@ -635,7 +679,8 @@ static const std::vector<Variable<CUser>> UserVars = {
 		[](CUser* pUser, const CString& sVal, CString& sError) {
 			pUser->SetTimezone(sVal);
 			return true;
-		}
+		},
+		nullptr
 	},
 };
 
@@ -649,7 +694,8 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 		[](CIRCNetwork* pNetwork, const CString& sVal, CString& sError) {
 			pNetwork->SetAltNick(sVal);
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"BindHost", StringType,
@@ -688,7 +734,8 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 
 			pNetwork->SetBindHost(sVal);
 			return true;
-		}
+		},
+		nullptr
 	},
 #ifdef HAVE_ICU
 	{
@@ -700,7 +747,8 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 		[](CIRCNetwork* pNetwork, const CString& sVal, CString& sError) {
 			pNetwork->SetEncoding(sVal);
 			return true;
-		}
+		},
+		nullptr
 	},
 #endif
 	{
@@ -712,7 +760,8 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 		[](CIRCNetwork* pNetwork, const CString& sVal, CString& sError) {
 			pNetwork->SetFloodBurst(sVal.ToUShort());
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"FloodRate", DoubleType,
@@ -723,7 +772,8 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 		[](CIRCNetwork* pNetwork, const CString& sVal, CString& sError) {
 			pNetwork->SetFloodRate(sVal.ToDouble());
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"Ident", StringType,
@@ -734,7 +784,8 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 		[](CIRCNetwork* pNetwork, const CString& sVal, CString& sError) {
 			pNetwork->SetIdent(sVal);
 			return true;
-		}
+		},
+		nullptr
 	},
 	// TODO: IRCConnectEnabled?
 	{
@@ -746,7 +797,8 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 		[](CIRCNetwork* pNetwork, const CString& sVal, CString& sError) {
 			pNetwork->SetJoinDelay(sVal.ToUShort());
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"Nick", StringType,
@@ -757,7 +809,8 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 		[](CIRCNetwork* pNetwork, const CString& sVal, CString& sError) {
 			pNetwork->SetNick(sVal);
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"QuitMsg", StringType,
@@ -768,7 +821,8 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 		[](CIRCNetwork* pNetwork, const CString& sVal, CString& sError) {
 			pNetwork->SetQuitMsg(sVal);
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"RealName", StringType,
@@ -779,7 +833,8 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 		[](CIRCNetwork* pNetwork, const CString& sVal, CString& sError) {
 			pNetwork->SetRealName(sVal);
 			return true;
-		}
+		},
+		nullptr
 	},
 };
 
@@ -799,7 +854,8 @@ static const std::vector<Variable<CChan>> ChanVars = {
 			else
 				pChan->SetAutoClearChanBuffer(sVal.ToBool());
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"Buffer", IntType,
@@ -817,7 +873,8 @@ static const std::vector<Variable<CChan>> ChanVars = {
 			else if (!pChan->SetBufferCount(i, pChan->GetNetwork()->GetUser()->IsAdmin()))
 				sError = "Setting failed, the limit is " + CString(CZNC::Get().GetMaxBufferSize());
 			return sError.empty();
-		}
+		},
+		nullptr
 	},
 	{
 		"Detached", BoolType,
@@ -834,7 +891,8 @@ static const std::vector<Variable<CChan>> ChanVars = {
 					pChan->AttachUser();
 			}
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"Disabled", BoolType,
@@ -851,7 +909,8 @@ static const std::vector<Variable<CChan>> ChanVars = {
 					pChan->Enable();
 			}
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"InConfig", BoolType,
@@ -862,7 +921,8 @@ static const std::vector<Variable<CChan>> ChanVars = {
 		[](CChan* pChan, const CString& sVal, CString& sError) {
 			pChan->SetInConfig(sVal.ToBool());
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"Key", StringType,
@@ -873,7 +933,8 @@ static const std::vector<Variable<CChan>> ChanVars = {
 		[](CChan* pChan, const CString& sVal, CString& sError) {
 			pChan->SetKey(sVal);
 			return true;
-		}
+		},
+		nullptr
 	},
 	{
 		"Modes", StringType,
@@ -884,7 +945,8 @@ static const std::vector<Variable<CChan>> ChanVars = {
 		[](CChan* pChan, const CString& sVal, CString& sError) {
 			pChan->SetDefaultModes(sVal);
 			return true;
-		}
+		},
+		nullptr
 	},
 };
 
@@ -898,7 +960,8 @@ static const std::vector<Variable<CSettingsMod>> ModVars = {
 		[](CSettingsMod* pMod, const CString& sVal, CString& sError) {
 			pMod->SetPrefix(sVal);
 			return true;
-		}
+		},
+		nullptr
 	},
 };
 
@@ -962,6 +1025,8 @@ void CSettingsMod::OnModCommand(const CString& sLine)
 		OnGetCommand(this, GetModName(), sLine, ModVars);
 	} else if (sCmd.Equals("Set")) {
 		OnSetCommand(this, GetModName(), sLine, ModVars);
+	} else if (sCmd.Equals("Reset")) {
+		OnResetCommand(this, GetModName(), sLine, ModVars);
 	} else {
 		PutModule("Unknown command!");
 	}
@@ -1068,6 +1133,8 @@ CModule::EModRet CSettingsMod::OnGlobalCommand(const CString& sTgt, const CStrin
 		OnGetCommand(&CZNC::Get(), sTgt, sLine, GlobalVars);
 	else if (sCmd.Equals("Set"))
 		OnSetCommand(&CZNC::Get(), sTgt, sLine, GlobalVars);
+	else if (sCmd.Equals("Reset"))
+		OnResetCommand(&CZNC::Get(), sTgt, sLine, GlobalVars);
 	else
 		PutLine(sTgt, "Unknown command!");
 
@@ -1091,6 +1158,8 @@ CModule::EModRet CSettingsMod::OnUserCommand(CUser* pUser, const CString& sTgt, 
 		OnGetCommand(pUser, sTgt, sLine, UserVars);
 	else if (sCmd.Equals("Set"))
 		OnSetCommand(pUser, sTgt, sLine, UserVars);
+	else if (sCmd.Equals("Reset"))
+		OnResetCommand(pUser, sTgt, sLine, UserVars);
 	else
 		PutLine(sTgt, "Unknown command!");
 
@@ -1114,6 +1183,8 @@ CModule::EModRet CSettingsMod::OnNetworkCommand(CIRCNetwork* pNetwork, const CSt
 		OnGetCommand(pNetwork, sTgt, sLine, NetworkVars);
 	else if (sCmd.Equals("Set"))
 		OnSetCommand(pNetwork, sTgt, sLine, NetworkVars);
+	else if (sCmd.Equals("Reset"))
+		OnResetCommand(pNetwork, sTgt, sLine, NetworkVars);
 	else
 		PutLine(sTgt, "Unknown command!");
 
@@ -1137,6 +1208,8 @@ CModule::EModRet CSettingsMod::OnChanCommand(CChan* pChan, const CString& sTgt, 
 		OnGetCommand(pChan, sTgt, sLine, ChanVars);
 	else if (sCmd.Equals("Set"))
 		OnSetCommand(pChan, sTgt, sLine, ChanVars);
+	else if (sCmd.Equals("Reset"))
+		OnResetCommand(pChan, sTgt, sLine, ChanVars);
 	else
 		PutLine(sTgt, "Unknown command!");
 
@@ -1229,6 +1302,42 @@ void CSettingsMod::OnSetCommand(T* pTarget, const CString& sTgt, const CString& 
 
 	if (!bFound)
 		PutLine(sTgt, "Unknown variable!");
+}
+
+template <typename T, typename V>
+void CSettingsMod::OnResetCommand(T* pTarget, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars)
+{
+	const CString sVar = sLine.Token(1);
+
+	if (sVar.empty()) {
+		PutLine(sTgt, "Usage: Reset <variable>");
+		return;
+	}
+
+	bool bFound = false;
+	for (const auto& Var : vVars) {
+		if (Var.name.WildCmp(sVar, CString::CaseInsensitive)) {
+			CString sError;
+			if (!Var.resetter) {
+				PutLine(sTgt, "Error: reset not supported!");
+			} else if (!Var.resetter(pTarget, sError)) {
+				PutLine(sTgt, sError);
+			} else {
+				VCString vsValues;
+				Var.getter(pTarget).Split("\n", vsValues, false);
+				if (vsValues.empty()) {
+					PutLine(sTgt, Var.name + " = ");
+				} else {
+					for (const CString& s : vsValues)
+						PutLine(sTgt, Var.name + " = " + s);
+				}
+			}
+			bFound = true;
+		}
+	}
+
+	if (!bFound)
+		PutLine(sTgt, "Error: unknown variable!");
 }
 
 CTable CSettingsMod::FilterCmdTable(const CString& sFilter) const
