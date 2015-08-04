@@ -1006,7 +1006,7 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 			return true;
 		},
 		[](CUser* pModifier, CIRCNetwork* pNetwork, CString& sError) {
-			pNetwork->ClearTrustedFingerPrints();
+			pNetwork->ClearTrustedFingerprints();
 			return true;
 		}
 	},
