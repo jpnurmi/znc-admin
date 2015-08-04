@@ -384,29 +384,10 @@ static const std::vector<Variable<CUser>> UserVars = {
 			return pUser->GetBindHost();
 		},
 		[](CUser* pUser, const CString& sVal, CString& sError) {
-			// TODO: move sanity checking to CUser::SetBindHost()
-			if (sVal.Equals(pUser->GetBindHost())) {
-				sError = "This bind host is already set";
+			if (!CZNC::Get().IsBindHostAllowed(sVal)) { // TODO
+				sError = "The bind host is not available. See '/msg " + pUser->GetStatusPrefix() + "settings Get BindHost' for the list of available bind hosts.";
 				return false;
 			}
-
-			const VCString& vsHosts = CZNC::Get().GetBindHosts();
-			if (!pUser->IsAdmin() && !vsHosts.empty()) {
-				bool bFound = false;
-
-				for (const CString& sHost : vsHosts) {
-					if (sVal.Equals(sHost)) {
-						bFound = true;
-						break;
-					}
-				}
-
-				if (!bFound) {
-					sError = "The bind host is not available. See /msg " + pUser->GetStatusPrefix() + "status ListBindHosts for the list of available bind hosts.";
-					return false;
-				}
-			}
-
 			pUser->SetBindHost(sVal);
 			return true;
 		},
@@ -828,29 +809,10 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 			return pNetwork->GetBindHost();
 		},
 		[](CIRCNetwork* pNetwork, const CString& sVal, CString& sError) {
-			// TODO: move the sanity checking to CIRCNetwork::SetBindHost()
-			if (sVal.Equals(pNetwork->GetBindHost())) {
-				sError = "This bind host is already set";
+			if (!CZNC::Get().IsBindHostAllowed(sVal)) { // TODO
+				sError = "The bind host is not available. See '/msg " + pNetwork->GetUser()->GetStatusPrefix() + "settings Get BindHost' for the list of available bind hosts.";
 				return false;
 			}
-
-			const VCString& vsHosts = CZNC::Get().GetBindHosts();
-			if (!pNetwork->GetUser()->IsAdmin() && !vsHosts.empty()) {
-				bool bFound = false;
-
-				for (const CString& vsHost : vsHosts) {
-					if (sVal.Equals(vsHost)) {
-						bFound = true;
-						break;
-					}
-				}
-
-				if (!bFound) {
-					sError = "The bind host is not available. See /msg " + pNetwork->GetUser()->GetStatusPrefix() + "status ListBindHosts for the list of available bind hosts.";
-					return false;
-				}
-			}
-
 			pNetwork->SetBindHost(sVal);
 			return true;
 		},
