@@ -25,50 +25,6 @@
 #error The settings module requires the latest development version of ZNC.
 #endif
 
-class CSettingsMod : public CModule
-{
-public:
-	MODCONSTRUCTOR(CSettingsMod)
-	{
-		AddHelpCommand();
-		AddCommand("Get", nullptr, "<variable>", "Gets the value of a variable.");
-		AddCommand("List", nullptr, "[filter]", "Lists available variables filtered by name or type.");
-		AddCommand("Set", nullptr, "<variable> <value>", "Sets the value of a variable.");
-		AddCommand("Reset", nullptr, "<variable>", "Resets the value(s) of a variable.");
-	}
-
-	void OnModCommand(const CString& sLine) override;
-	EModRet OnUserRaw(CString& sLine) override;
-
-	CString GetPrefix() const;
-	void SetPrefix(const CString& sPrefix);
-
-protected:
-	EModRet OnUserCommand(CUser* pUser, const CString& sTgt, const CString& sLine);
-	EModRet OnNetworkCommand(CIRCNetwork* pNetwork, const CString& sTgt, const CString& sLine);
-	EModRet OnChanCommand(CChan* pChan, const CString& sTgt, const CString& sLine);
-
-private:
-	template <typename V>
-	void OnHelpCommand(const CString& sTgt, const CString& sLine, const std::vector<V>& vVars);
-	template <typename T, typename V>
-	void OnListCommand(T* pTarget, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars);
-	template <typename T, typename V>
-	void OnGetCommand(T* pTarget, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars);
-	template <typename T, typename V>
-	void OnSetCommand(T* pTarget, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars);
-	template <typename T, typename V>
-	void OnResetCommand(T* pTarget, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars);
-
-	CTable FilterCmdTable(const CString& sFilter) const;
-	template <typename V>
-	CTable FilterVarTable(const std::vector<V>& vVars, const CString& sFilter) const;
-
-	void PutError(const CString& sTgt, const CString& sLine);
-	void PutLine(const CString& sTgt, const CString& sLine);
-	void PutTable(const CString& sTgt, const CTable& Table);
-};
-
 enum VarType {
 	StringType, BoolType, IntType, DoubleType, ListType
 };
@@ -94,15 +50,54 @@ struct Variable
 	std::function<bool(T*, CString&)> resetter;
 };
 
-template <typename V>
-static bool CanModify(const CUser* pUser, const Variable<V>& Var)
+class CSettingsMod : public CModule
 {
-	if (!pUser->IsAdmin() && (Var.flags & RequiresAdmin))
-		return false;
-	if (!pUser->IsAdmin() && pUser->DenySetBindHost() && (Var.flags & RequiresSetBindHost))
-		return false;
-	return true;
-}
+public:
+	MODCONSTRUCTOR(CSettingsMod)
+	{
+		AddHelpCommand();
+		AddCommand("Get", nullptr, "<variable>", "Gets the value of a variable.");
+		AddCommand("List", nullptr, "[filter]", "Lists available variables filtered by name or type.");
+		AddCommand("Set", nullptr, "<variable> <value>", "Sets the value of a variable.");
+		AddCommand("Reset", nullptr, "<variable>", "Resets the value(s) of a variable.");
+	}
+
+	void OnModCommand(const CString& sLine) override;
+	EModRet OnUserRaw(CString& sLine) override;
+
+	CString GetPrefix() const;
+	void SetPrefix(const CString& sPrefix);
+
+protected:
+	EModRet OnUserCommand(CUser* pUser, const CString& sTgt, const CString& sLine);
+	EModRet OnNetworkCommand(CIRCNetwork* pNetwork, const CString& sTgt, const CString& sLine);
+	EModRet OnChanCommand(CChan* pChan, const CString& sTgt, const CString& sLine);
+
+private:
+	bool CanModify(const CZNC* pZNC, VarFlags uFlags) const;
+	bool CanModify(const CUser* pUser, VarFlags uFlags) const;
+	bool CanModify(const CIRCNetwork* pNetwork, VarFlags uFlags) const;
+	bool CanModify(const CChan* pChan, VarFlags uFlags) const;
+
+	template <typename V>
+	void OnHelpCommand(const CString& sTgt, const CString& sLine, const std::vector<V>& vVars);
+	template <typename T, typename V>
+	void OnListCommand(T* pTarget, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars);
+	template <typename T, typename V>
+	void OnGetCommand(T* pTarget, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars);
+	template <typename T, typename V>
+	void OnSetCommand(T* pTarget, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars);
+	template <typename T, typename V>
+	void OnResetCommand(T* pTarget, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars);
+
+	CTable FilterCmdTable(const CString& sFilter) const;
+	template <typename V>
+	CTable FilterVarTable(const std::vector<V>& vVars, const CString& sFilter) const;
+
+	void PutError(const CString& sTgt, const CString& sLine);
+	void PutLine(const CString& sTgt, const CString& sLine);
+	void PutTable(const CString& sTgt, const CTable& Table);
+};
 
 static const std::vector<Variable<CZNC>> GlobalVars = {
 	{
@@ -1263,11 +1258,6 @@ CModule::EModRet CSettingsMod::OnUserRaw(CString& sLine)
 
 CModule::EModRet CSettingsMod::OnUserCommand(CUser* pUser, const CString& sTgt, const CString& sLine)
 {
-	if (pUser != GetUser() && !GetUser()->IsAdmin()) {
-		PutError(sTgt, "access denied");
-		return HALT;
-	}
-
 	const CString sCmd = sLine.Token(0);
 
 	if (sCmd.Equals("Help"))
@@ -1288,11 +1278,6 @@ CModule::EModRet CSettingsMod::OnUserCommand(CUser* pUser, const CString& sTgt, 
 
 CModule::EModRet CSettingsMod::OnNetworkCommand(CIRCNetwork* pNetwork, const CString& sTgt, const CString& sLine)
 {
-	if (pNetwork->GetUser() != GetUser() && !GetUser()->IsAdmin()) {
-		PutError(sTgt, "access denied");
-		return HALT;
-	}
-
 	const CString sCmd = sLine.Token(0);
 
 	if (sCmd.Equals("Help"))
@@ -1313,11 +1298,6 @@ CModule::EModRet CSettingsMod::OnNetworkCommand(CIRCNetwork* pNetwork, const CSt
 
 CModule::EModRet CSettingsMod::OnChanCommand(CChan* pChan, const CString& sTgt, const CString& sLine)
 {
-	if (pChan->GetNetwork()->GetUser() != GetUser() && !GetUser()->IsAdmin()) {
-		PutError(sTgt, "access denied");
-		return HALT;
-	}
-
 	const CString sCmd = sLine.Token(0);
 
 	if (sCmd.Equals("Help"))
@@ -1334,6 +1314,32 @@ CModule::EModRet CSettingsMod::OnChanCommand(CChan* pChan, const CString& sTgt, 
 		PutError(sTgt, "unknown command");
 
 	return HALT;
+}
+
+bool CSettingsMod::CanModify(const CZNC* pZNC, VarFlags uFlags) const
+{
+	return GetUser()->IsAdmin() || !(uFlags & RequiresAdmin);
+}
+
+bool CSettingsMod::CanModify(const CUser* pUser, VarFlags uFlags) const
+{
+	if (GetUser()->IsAdmin())
+		return true;
+	if (GetUser() != pUser || (uFlags & RequiresAdmin))
+		return false;
+	if (GetUser()->DenySetBindHost() && (uFlags & RequiresSetBindHost))
+		return false;
+	return true;
+}
+
+bool CSettingsMod::CanModify(const CIRCNetwork* pNetwork, VarFlags uFlags) const
+{
+	return CanModify(pNetwork->GetUser(), uFlags);
+}
+
+bool CSettingsMod::CanModify(const CChan* pChan, VarFlags uFlags) const
+{
+	return CanModify(pChan->GetNetwork(), uFlags);
 }
 
 template <typename V>
@@ -1404,7 +1410,7 @@ void CSettingsMod::OnSetCommand(T* pTarget, const CString& sTgt, const CString& 
 	for (const auto& Var : vVars) {
 		if (Var.name.WildCmp(sVar, CString::CaseInsensitive)) {
 			CString sError;
-			if (!CanModify(GetUser(), Var)) {
+			if (!CanModify(pTarget, Var.flags)) {
 				PutError(sTgt, "access denied");
 			} else if (!Var.setter(pTarget, sVal, sError)) {
 				PutError(sTgt, sError);
@@ -1440,7 +1446,7 @@ void CSettingsMod::OnResetCommand(T* pTarget, const CString& sTgt, const CString
 	for (const auto& Var : vVars) {
 		if (Var.name.WildCmp(sVar, CString::CaseInsensitive)) {
 			CString sError;
-			if (!CanModify(GetUser(), Var)) {
+			if (!CanModify(pTarget, Var.flags)) {
 				PutError(sTgt, "access denied");
 			} else if (!Var.resetter) {
 				PutError(sTgt, "reset not supported");
