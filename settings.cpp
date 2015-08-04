@@ -380,7 +380,10 @@ static const std::vector<Variable<CUser>> UserVars = {
 			pTarget->SetBindHost(sVal);
 			return true;
 		},
-		nullptr
+		[](CUser* pModifier, CUser* pTarget, CString& sError) {
+			pTarget->SetBindHost("");
+			return true;
+		}
 	},
 	{
 		"ChanBufferSize", IntType,
