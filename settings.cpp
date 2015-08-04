@@ -84,11 +84,41 @@ struct Variable
 };
 
 static const std::vector<Variable<CUser>> UserVars = {
-	// TODO: Admin?
-	// TODO: Allow?
+	{
+		"Admin", BoolType,
+		"Whether the user has admin rights.",
+		[](const CUser* pUser) {
+			return CString(pUser->IsAdmin());
+		},
+		[](CUser* pUser, const CString& sVal, CString& sError) {
+			if (!pUser->IsAdmin()) {
+				sError = "Error: access denied";
+				return false;
+			}
+
+			pUser->SetAdmin(sVal.ToBool());
+			return true;
+		}
+	},
+	{
+		"Allow", ListType,
+		"The list of allowed IPs for the user. Wildcards (*) are supported.",
+		[](const CUser* pUser) {
+			const SCString& ssHosts = pUser->GetAllowedHosts();
+			return CString("\n").Join(ssHosts.begin(), ssHosts.end());
+		},
+		[](CUser* pUser, const CString& sVal, CString& sError) {
+			// TODO: CUser::DelAllowedHost() and/or CUser::SetAllowedHosts()
+			SCString ssHosts;
+			sVal.Split(" ", ssHosts, false);
+			for (const CString& sHost : ssHosts)
+				pUser->AddAllowedHost(sHost);
+			return true;
+		}
+	},
 	{
 		"AltNick", StringType,
-		"The default alternate nick",
+		"The default alternate nick.",
 		[](const CUser* pUser) {
 			return pUser->GetAltNick();
 		},
@@ -421,7 +451,17 @@ static const std::vector<Variable<CUser>> UserVars = {
 			return true;
 		}
 	},
-	// TODO: Skin?
+	{
+		"Skin", StringType,
+		"The web interface skin.",
+		[](const CUser* pUser) {
+			return pUser->GetSkinName();
+		},
+		[](CUser* pUser, const CString& sVal, CString& sError) {
+			pUser->SetSkinName(sVal);
+			return true;
+		}
+	},
 	{
 		"StatusPrefix", StringType,
 		"The prefix for status and module queries.",
@@ -654,7 +694,23 @@ static const std::vector<Variable<CChan>> ChanVars = {
 			return true;
 		}
 	},
-	// TODO: Disabled?
+	{
+		"Disabled", BoolType,
+		"Whether the channel is disabled.",
+		[](const CChan* pChan) {
+			return CString(pChan->IsDisabled());
+		},
+		[](CChan* pChan, const CString& sVal, CString& sError) {
+			bool b = sVal.ToBool();
+			if (b != pChan->IsDisabled()) {
+				if (b)
+					pChan->Disable();
+				else
+					pChan->Enable();
+			}
+			return true;
+		}
+	},
 	{
 		"InConfig", BoolType,
 		"Whether the channel is stored in the config file.",
