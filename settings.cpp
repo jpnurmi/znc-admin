@@ -1090,11 +1090,17 @@ CModule::EModRet CSettingsMod::OnUserRaw(CString& sLine)
 
 		if (sTgt.TrimPrefix(GetUser()->GetStatusPrefix() + sPfx)) {
 			// <user>
+			if (sTgt.Equals("user"))
+				return OnUserCommand(GetUser(), sPfx + sTgt, sRest);
 			if (CUser* pUser = CZNC::Get().FindUser(sTgt))
 				return OnUserCommand(pUser, sPfx + sTgt, sRest);
+
 			// <network>
+			if (sTgt.Equals("network") && GetNetwork())
+				return OnNetworkCommand(GetNetwork(), sPfx + sTgt, sRest);
 			if (CIRCNetwork* pNetwork = GetUser()->FindNetwork(sTgt))
 				return OnNetworkCommand(pNetwork, sPfx + sTgt, sRest);
+
 			// <#chan>
 			if (CChan* pChan = GetNetwork() ? GetNetwork()->FindChan(sTgt) : nullptr)
 				return OnChanCommand(pChan, sPfx + sTgt, sRest);
