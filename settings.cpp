@@ -44,7 +44,6 @@ public:
 	void SetPrefix(const CString& sPrefix);
 
 protected:
-	EModRet OnGlobalCommand(const CString& sTgt, const CString& sLine);
 	EModRet OnUserCommand(CUser* pUser, const CString& sTgt, const CString& sLine);
 	EModRet OnNetworkCommand(CIRCNetwork* pNetwork, const CString& sTgt, const CString& sLine);
 	EModRet OnChanCommand(CChan* pChan, const CString& sTgt, const CString& sLine);
@@ -657,6 +656,23 @@ static const std::vector<Variable<CUser>> UserVars = {
 		nullptr
 	},
 	{
+		"SettingsPrefix", StringType,
+		"A settings prefix (in addition to the status prefix) for settings queries.",
+		[](const CUser* pUser) {
+			CSettingsMod* pMod = dynamic_cast<CSettingsMod*>(pUser->GetModules().FindModule("settings"));
+			return pMod ? pMod->GetPrefix() : "";
+		},
+		[](CUser* pUser, const CString& sVal, CString& sError) {
+			CSettingsMod* pMod = dynamic_cast<CSettingsMod*>(pUser->GetModules().FindModule("settings"));
+			if (!pMod) {
+				sError = "Error: unable to find the module instance!";
+				return false;
+			}
+			return true;
+		},
+		nullptr
+	},
+	{
 		"StatusPrefix", StringType,
 		"The prefix for status and module queries.",
 		[](const CUser* pUser) {
@@ -960,21 +976,6 @@ static const std::vector<Variable<CChan>> ChanVars = {
 	},
 };
 
-static const std::vector<Variable<CSettingsMod>> ModVars = {
-	{
-		"Prefix", StringType,
-		"A settings prefix (in addition to the status prefix) for settings queries.",
-		[](const CSettingsMod* pMod) {
-			return pMod->GetPrefix();
-		},
-		[](CSettingsMod* pMod, const CString& sVal, CString& sError) {
-			pMod->SetPrefix(sVal);
-			return true;
-		},
-		nullptr
-	},
-};
-
 CString CSettingsMod::GetPrefix() const
 {
 	CString sPrefix = GetNV("prefix");
@@ -991,6 +992,11 @@ void CSettingsMod::SetPrefix(const CString& sPrefix)
 void CSettingsMod::OnModCommand(const CString& sLine)
 {
 	const CString sCmd = sLine.Token(0);
+
+	if (!GetUser()->IsAdmin() && (sCmd.Equals("Set") || sCmd.Equals("Reset"))) {
+		PutModule("Error: access denied.");
+		return;
+	}
 
 	if (sCmd.Equals("Help")) {
 		HandleHelpCommand(sLine);
@@ -1030,13 +1036,13 @@ void CSettingsMod::OnModCommand(const CString& sLine)
 			PutModule("-----");
 		}
 	} else if (sCmd.Equals("List")) {
-		OnListCommand(this, GetModName(), sLine, ModVars);
+		OnListCommand(&CZNC::Get(), GetModName(), sLine, GlobalVars);
 	} else if (sCmd.Equals("Get")) {
-		OnGetCommand(this, GetModName(), sLine, ModVars);
+		OnGetCommand(&CZNC::Get(), GetModName(), sLine, GlobalVars);
 	} else if (sCmd.Equals("Set")) {
-		OnSetCommand(this, GetModName(), sLine, ModVars);
+		OnSetCommand(&CZNC::Get(), GetModName(), sLine, GlobalVars);
 	} else if (sCmd.Equals("Reset")) {
-		OnResetCommand(this, GetModName(), sLine, ModVars);
+		OnResetCommand(&CZNC::Get(), GetModName(), sLine, GlobalVars);
 	} else {
 		PutModule("Unknown command!");
 	}
@@ -1058,9 +1064,6 @@ CModule::EModRet CSettingsMod::OnUserRaw(CString& sLine)
 		const CString sPfx = GetPrefix();
 
 		if (sTgt.TrimPrefix(GetUser()->GetStatusPrefix() + sPfx)) {
-			// <global>
-			if (sTgt.Equals("global"))
-				return OnGlobalCommand(sPfx + sTgt, sRest);
 			// <user>
 			if (CUser* pUser = CZNC::Get().FindUser(sTgt))
 				return OnUserCommand(pUser, sPfx + sTgt, sRest);
@@ -1124,31 +1127,6 @@ CModule::EModRet CSettingsMod::OnUserRaw(CString& sLine)
 		}
 	}
 	return CONTINUE;
-}
-
-CModule::EModRet CSettingsMod::OnGlobalCommand(const CString& sTgt, const CString& sLine)
-{
-	const CString sCmd = sLine.Token(0);
-
-	if (!GetUser()->IsAdmin() && sCmd.Equals("Set")) {
-		PutLine(sTgt, "Error: access denied.");
-		return HALT;
-	}
-
-	if (sCmd.Equals("Help"))
-		OnHelpCommand(sTgt, sLine, GlobalVars);
-	else if (sCmd.Equals("List"))
-		OnListCommand(&CZNC::Get(), sTgt, sLine, GlobalVars);
-	else if (sCmd.Equals("Get"))
-		OnGetCommand(&CZNC::Get(), sTgt, sLine, GlobalVars);
-	else if (sCmd.Equals("Set"))
-		OnSetCommand(&CZNC::Get(), sTgt, sLine, GlobalVars);
-	else if (sCmd.Equals("Reset"))
-		OnResetCommand(&CZNC::Get(), sTgt, sLine, GlobalVars);
-	else
-		PutLine(sTgt, "Unknown command!");
-
-	return HALT;
 }
 
 CModule::EModRet CSettingsMod::OnUserCommand(CUser* pUser, const CString& sTgt, const CString& sLine)
