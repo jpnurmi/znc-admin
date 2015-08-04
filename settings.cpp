@@ -270,14 +270,16 @@ static const std::vector<Variable<CUser>> UserVars = {
 			return CString("\n").Join(ssHosts.begin(), ssHosts.end());
 		},
 		[](CUser* pUser, const CString& sVal, CString& sError) {
-			// TODO: CUser::DelAllowedHost() and/or CUser::SetAllowedHosts()
 			SCString ssHosts;
 			sVal.Split(" ", ssHosts, false);
 			for (const CString& sHost : ssHosts)
 				pUser->AddAllowedHost(sHost);
 			return true;
 		},
-		nullptr
+		[](CUser* pUser, CString& sError) {
+			pUser->ClearAllowedHosts();
+			return true;
+		}
 	},
 	{
 		"AltNick", StringType,
