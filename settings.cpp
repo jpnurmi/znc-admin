@@ -99,6 +99,8 @@ private:
 	void PutTable(const CString& sTgt, const CTable& Table);
 };
 
+// TODO: expose the default constants needed by the reset methods?
+
 static const std::vector<Variable<CZNC>> GlobalVars = {
 	{
 		"AnonIPLimit", IntType, RequiresAdmin,
@@ -111,7 +113,7 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 			return true;
 		},
 		[](CZNC* pZNC, CString& sError) {
-			pZNC->SetAnonIPLimit(10); // TODO: expose the default constants?
+			pZNC->SetAnonIPLimit(10);
 			return true;
 		}
 	},
@@ -145,7 +147,7 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 			return true;
 		},
 		[](CZNC* pZNC, CString& sError) {
-			pZNC->SetConnectDelay(5); // TODO: expose the default constants?
+			pZNC->SetConnectDelay(5);
 			return true;
 		}
 	},
@@ -160,7 +162,7 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 			return true;
 		},
 		[](CZNC* pZNC, CString& sError) {
-			pZNC->SetHideVersion(false); // TODO: expose the default constants?
+			pZNC->SetHideVersion(false);
 			return true;
 		}
 	},
@@ -175,7 +177,7 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 			return true;
 		},
 		[](CZNC* pZNC, CString& sError) {
-			pZNC->SetMaxBufferSize(500); // TODO: expose the default constants?
+			pZNC->SetMaxBufferSize(500);
 			return true;
 		}
 	},
@@ -207,7 +209,7 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 			return true;
 		},
 		[](CZNC* pZNC, CString& sError) {
-			pZNC->SetProtectWebSessions(true); // TODO: expose the default constants?
+			pZNC->SetProtectWebSessions(true);
 			return true;
 		}
 	},
@@ -222,7 +224,7 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 			return true;
 		},
 		[](CZNC* pZNC, CString& sError) {
-			pZNC->SetServerThrottle(30); // TODO: expose the default constants?
+			pZNC->SetServerThrottle(30);
 			return true;
 		}
 	},
@@ -341,7 +343,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 			return true;
 		},
 		[](CUser* pUser, CString& sError) {
-			pUser->SetTimestampAppend(false); // TODO: expose the default constants?
+			pUser->SetTimestampAppend(false);
 			return true;
 		}
 	},
@@ -356,7 +358,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 			return true;
 		},
 		[](CUser* pUser, CString& sError) {
-			pUser->SetAutoClearChanBuffer(true); // TODO: expose the default constants?
+			pUser->SetAutoClearChanBuffer(true);
 			return true;
 		}
 	},
@@ -371,7 +373,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 			return true;
 		},
 		[](CUser* pUser, CString& sError) {
-			pUser->SetAutoClearQueryBuffer(true); // TODO: expose the default constants?
+			pUser->SetAutoClearQueryBuffer(true);
 			return true;
 		}
 	},
@@ -425,7 +427,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 			return true;
 		},
 		[](CUser* pUser, CString& sError) {
-			pUser->SetChanBufferSize(50); // TODO: expose the default constants?
+			pUser->SetChanBufferSize(50);
 			return true;
 		},
 	},
@@ -558,7 +560,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 			return true;
 		},
 		[](CUser* pUser, CString& sError) {
-			pUser->SetJoinTries(10); // TODO: expose the default constants?
+			pUser->SetJoinTries(10);
 			return true;
 		}
 	},
@@ -573,7 +575,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 			return true;
 		},
 		[](CUser* pUser, CString& sError) {
-			pUser->SetMaxJoins(0); // TODO: expose the default constants?
+			pUser->SetMaxJoins(0);
 			return true;
 		}
 	},
@@ -588,7 +590,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 			return true;
 		},
 		[](CUser* pUser, CString& sError) {
-			pUser->SetMaxNetworks(1); // TODO: expose the default constants?
+			pUser->SetMaxNetworks(1);
 			return true;
 		}
 	},
@@ -603,7 +605,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 			return true;
 		},
 		[](CUser* pUser, CString& sError) {
-			pUser->SetMaxQueryBuffers(50); // TODO: expose the default constants?
+			pUser->SetMaxQueryBuffers(50);
 			return true;
 		}
 	},
@@ -618,7 +620,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 			return true;
 		},
 		[](CUser* pUser, CString& sError) {
-			pUser->SetMultiClients(true); // TODO: expose the default constants?
+			pUser->SetMultiClients(true);
 			return true;
 		}
 	},
@@ -648,7 +650,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 			return true;
 		},
 		[](CUser* pUser, CString& sError) {
-			pUser->SetTimestampPrepend(true); // TODO: expose the default constants?
+			pUser->SetTimestampPrepend(true);
 			return true;
 		}
 	},
@@ -681,7 +683,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 			return true;
 		},
 		[](CUser* pUser, CString& sError) {
-			pUser->SetQueryBufferSize(50); // TODO: expose the default constants?
+			pUser->SetQueryBufferSize(50);
 			return true;
 		}
 	},
@@ -767,7 +769,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 			return true;
 		},
 		[](CUser* pUser, CString& sError) {
-			pUser->SetStatusPrefix("*"); // TODO: expose the default constants?
+			pUser->SetStatusPrefix("*");
 			return true;
 		}
 	},
@@ -782,7 +784,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 			return true;
 		},
 		[](CUser* pUser, CString& sError) {
-			pUser->SetTimestampFormat("[%H:%M:%S]"); // TODO: expose the default constants?
+			pUser->SetTimestampFormat("[%H:%M:%S]");
 			return true;
 		}
 	},
@@ -885,7 +887,7 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 			return true;
 		},
 		[](CIRCNetwork* pNetwork, CString& sError) {
-			pNetwork->SetFloodBurst(4); // TODO: expose the default constant?
+			pNetwork->SetFloodBurst(4);
 			return true;
 		}
 	},
@@ -900,7 +902,7 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 			return true;
 		},
 		[](CIRCNetwork* pNetwork, CString& sError) {
-			pNetwork->SetFloodRate(1); // TODO: expose the default constant?
+			pNetwork->SetFloodRate(1);
 			return true;
 		}
 	},
