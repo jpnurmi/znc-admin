@@ -98,7 +98,10 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 			pZNC->SetAnonIPLimit(sVal.ToUInt());
 			return true;
 		},
-		nullptr
+		[](CZNC* pZNC, CString& sError) {
+			pZNC->SetAnonIPLimit(10); // TODO: expose the default constants?
+			return true;
+		}
 	},
 	{
 		"BindHost", ListType,
@@ -129,7 +132,10 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 			pZNC->SetConnectDelay(sVal.ToUInt());
 			return true;
 		},
-		nullptr
+		[](CZNC* pZNC, CString& sError) {
+			pZNC->SetConnectDelay(5); // TODO: expose the default constants?
+			return true;
+		}
 	},
 	{
 		"HideVersion", BoolType,
@@ -141,7 +147,10 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 			pZNC->SetHideVersion(sVal.ToBool());
 			return true;
 		},
-		nullptr
+		[](CZNC* pZNC, CString& sError) {
+			pZNC->SetHideVersion(false); // TODO: expose the default constants?
+			return true;
+		}
 	},
 	{
 		"MaxBufferSize", IntType,
@@ -153,7 +162,10 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 			pZNC->SetMaxBufferSize(sVal.ToUInt());
 			return true;
 		},
-		nullptr
+		[](CZNC* pZNC, CString& sError) {
+			pZNC->SetMaxBufferSize(500); // TODO: expose the default constants?
+			return true;
+		}
 	},
 	{
 		"Motd", ListType,
@@ -182,7 +194,10 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 			pZNC->SetProtectWebSessions(sVal.ToBool());
 			return true;
 		},
-		nullptr
+		[](CZNC* pZNC, CString& sError) {
+			pZNC->SetProtectWebSessions(true); // TODO: expose the default constants?
+			return true;
+		}
 	},
 	{
 		"ServerThrottle", IntType,
@@ -194,7 +209,10 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 			pZNC->SetServerThrottle(sVal.ToUInt());
 			return true;
 		},
-		nullptr
+		[](CZNC* pZNC, CString& sError) {
+			pZNC->SetServerThrottle(30); // TODO: expose the default constants?
+			return true;
+		}
 	},
 	{
 		"Skin", StringType,
@@ -206,7 +224,10 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 			pZNC->SetSkinName(sVal);
 			return true;
 		},
-		nullptr
+		[](CZNC* pZNC, CString& sError) {
+			pZNC->SetSkinName("");
+			return true;
+		}
 	},
 	// TODO: SSLCertFile
 	// TODO: SSLCiphers
@@ -221,7 +242,10 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 			pZNC->SetSkinName(sVal);
 			return true;
 		},
-		nullptr
+		[](CZNC* pZNC, CString& sError) {
+			pZNC->SetStatusPrefix("");
+			return true;
+		}
 	},
 	{
 		"TrustedProxy", ListType,
