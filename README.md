@@ -1,26 +1,21 @@
-An _experimental_ settings module for ZNC
-=========================================
+An _experimental_ admin module for ZNC
+======================================
 
-The settings module for ZNC aims to offer an intuitive and easy
-to remember IRC interface to ZNC settings.
+The admin module for ZNC aims to offer an intuitive and easy
+to remember IRC interface to ZNC administration.
 
 ### Notes
 - The module is experimental. It may or may not work as expected.
 - The module requires the latest development version (1.7.x) of ZNC.
 
-### Background
-
-The module is inspired by, but not a direct replacement for the
-built-in controlpanel module. The settings module does not offer
-commands for adding or removing users and networks and so forth,
-but focuses on the set of global, user, network and channel specific
-variables available in the ZNC configuration file. The available
-commands are ```LIST```, ```GET```, ```SET``` and ```RESET```.
-
 ### Usage
 
-To access settings of the current user or network, open a query
-with ```**user``` or ```**network```, respectively.
+To access global settings (admins only), open a query with ```*admin```.
+
+- global settings: ```/msg *admin help```
+
+To access settings of the current user or network, open a query with
+```**user``` or ```**network```, respectively.
 
 - user settings: ```/msg **user help```
 - network settings: ```/msg **network help```
@@ -44,7 +39,7 @@ Advanced examples:
 - channel settings of another network: ```/msg **freenode/#znc help```
 - channel settings of another network of another user: ```/msg **somebody/freenode/#znc help```
 
-PS. The prefix for settings queries is configurable. By default,
-a doubled ZNC status prefix is used.
+PS. The prefix for user, network, and channel queries is configurable.
+By default, a doubled ZNC status prefix is used.
 
 Got questions? Contact jpnurmi@gmail.com, or *jpnurmi* @ *#znc* on Freenode.

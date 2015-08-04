@@ -22,7 +22,7 @@
 #include <functional>
 
 #if (VERSION_MAJOR < 1) || (VERSION_MAJOR == 1 && VERSION_MINOR < 7)
-#error The settings module requires ZNC version 1.7.0 or later.
+#error The admin module requires ZNC version 1.7.0 or later.
 #endif
 
 enum VarType {
@@ -44,10 +44,10 @@ struct Variable
 	std::function<bool(CUser*, T*, CString&)> resetter;
 };
 
-class CSettingsMod : public CModule
+class CAdminMod : public CModule
 {
 public:
-	MODCONSTRUCTOR(CSettingsMod)
+	MODCONSTRUCTOR(CAdminMod)
 	{
 		AddHelpCommand();
 		AddCommand("Get", nullptr, "<variable>", "Gets the value of a variable.");
@@ -764,14 +764,14 @@ static const std::vector<Variable<CUser>> UserVars = {
 		}
 	},
 	{
-		"SettingsPrefix", StringType,
-		"A settings prefix (in addition to the status prefix) for settings queries.",
+		"AdminPrefix", StringType,
+		"An admin prefix (in addition to the status prefix) for settings queries.",
 		[](const CUser* pTarget) {
-			CSettingsMod* pMod = dynamic_cast<CSettingsMod*>(pTarget->GetModules().FindModule("settings"));
+			CAdminMod* pMod = dynamic_cast<CAdminMod*>(pTarget->GetModules().FindModule("admin"));
 			return pMod ? pMod->GetPrefix() : "";
 		},
 		[](CUser* pModifier, CUser* pTarget, const CString& sVal, CString& sError) {
-			CSettingsMod* pMod = dynamic_cast<CSettingsMod*>(pTarget->GetModules().FindModule("settings"));
+			CAdminMod* pMod = dynamic_cast<CAdminMod*>(pTarget->GetModules().FindModule("admin"));
 			if (!pMod) {
 				sError = "unable to find the module instance";
 				return false;
@@ -780,7 +780,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 			return true;
 		},
 		[](CUser* pModifier, CUser* pTarget, CString& sError) {
-			CSettingsMod* pMod = dynamic_cast<CSettingsMod*>(pTarget->GetModules().FindModule("settings"));
+			CAdminMod* pMod = dynamic_cast<CAdminMod*>(pTarget->GetModules().FindModule("admin"));
 			if (!pMod) {
 				sError = "unable to find the module instance";
 				return false;
@@ -1138,7 +1138,7 @@ static const std::vector<Variable<CChan>> ChanVars = {
 	},
 };
 
-CString CSettingsMod::GetPrefix() const
+CString CAdminMod::GetPrefix() const
 {
 	CString sPrefix = GetNV("prefix");
 	if (sPrefix.empty())
@@ -1146,12 +1146,12 @@ CString CSettingsMod::GetPrefix() const
 	return sPrefix;
 }
 
-void CSettingsMod::SetPrefix(const CString& sPrefix)
+void CAdminMod::SetPrefix(const CString& sPrefix)
 {
 	SetNV("prefix", sPrefix);
 }
 
-void CSettingsMod::OnModCommand(const CString& sLine)
+void CAdminMod::OnModCommand(const CString& sLine)
 {
 	const CString sCmd = sLine.Token(0);
 
@@ -1203,7 +1203,7 @@ void CSettingsMod::OnModCommand(const CString& sLine)
 	}
 }
 
-CModule::EModRet CSettingsMod::OnUserRaw(CString& sLine)
+CModule::EModRet CAdminMod::OnUserRaw(CString& sLine)
 {
 	CString sCopy = sLine;
 	if (sCopy.StartsWith("@"))
@@ -1290,7 +1290,7 @@ CModule::EModRet CSettingsMod::OnUserRaw(CString& sLine)
 	return CONTINUE;
 }
 
-CModule::EModRet CSettingsMod::OnUserCommand(CUser* pUser, const CString& sTgt, const CString& sLine)
+CModule::EModRet CAdminMod::OnUserCommand(CUser* pUser, const CString& sTgt, const CString& sLine)
 {
 	const CString sCmd = sLine.Token(0);
 
@@ -1315,7 +1315,7 @@ CModule::EModRet CSettingsMod::OnUserCommand(CUser* pUser, const CString& sTgt, 
 	return HALT;
 }
 
-CModule::EModRet CSettingsMod::OnNetworkCommand(CIRCNetwork* pNetwork, const CString& sTgt, const CString& sLine)
+CModule::EModRet CAdminMod::OnNetworkCommand(CIRCNetwork* pNetwork, const CString& sTgt, const CString& sLine)
 {
 	const CString sCmd = sLine.Token(0);
 
@@ -1340,7 +1340,7 @@ CModule::EModRet CSettingsMod::OnNetworkCommand(CIRCNetwork* pNetwork, const CSt
 	return HALT;
 }
 
-CModule::EModRet CSettingsMod::OnChanCommand(CChan* pChan, const CString& sTgt, const CString& sLine)
+CModule::EModRet CAdminMod::OnChanCommand(CChan* pChan, const CString& sTgt, const CString& sLine)
 {
 	const CString sCmd = sLine.Token(0);
 
@@ -1366,7 +1366,7 @@ CModule::EModRet CSettingsMod::OnChanCommand(CChan* pChan, const CString& sTgt, 
 }
 
 template <typename V>
-void CSettingsMod::OnHelpCommand(const CString& sTgt, const CString& sLine, const std::vector<V>& vVars)
+void CAdminMod::OnHelpCommand(const CString& sTgt, const CString& sLine, const std::vector<V>& vVars)
 {
 	const CString sFilter = sLine.Token(1);
 
@@ -1378,7 +1378,7 @@ void CSettingsMod::OnHelpCommand(const CString& sTgt, const CString& sLine, cons
 }
 
 template <typename T, typename V>
-void CSettingsMod::OnListCommand(T* pTarget, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars)
+void CAdminMod::OnListCommand(T* pTarget, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars)
 {
 	const CString sFilter = sLine.Token(1);
 
@@ -1390,7 +1390,7 @@ void CSettingsMod::OnListCommand(T* pTarget, const CString& sTgt, const CString&
 }
 
 template <typename T, typename V>
-void CSettingsMod::OnGetCommand(T* pTarget, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars)
+void CAdminMod::OnGetCommand(T* pTarget, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars)
 {
 	const CString sVar = sLine.Token(1);
 
@@ -1419,7 +1419,7 @@ void CSettingsMod::OnGetCommand(T* pTarget, const CString& sTgt, const CString& 
 }
 
 template <typename T, typename V>
-void CSettingsMod::OnSetCommand(T* pTarget, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars)
+void CAdminMod::OnSetCommand(T* pTarget, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars)
 {
 	const CString sVar = sLine.Token(1);
 	const CString sVal = sLine.Token(2, true);
@@ -1454,7 +1454,7 @@ void CSettingsMod::OnSetCommand(T* pTarget, const CString& sTgt, const CString& 
 }
 
 template <typename T, typename V>
-void CSettingsMod::OnResetCommand(T* pTarget, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars)
+void CAdminMod::OnResetCommand(T* pTarget, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars)
 {
 	const CString sVar = sLine.Token(1);
 
@@ -1489,7 +1489,7 @@ void CSettingsMod::OnResetCommand(T* pTarget, const CString& sTgt, const CString
 		PutError(sTgt, "unknown variable");
 }
 
-CTable CSettingsMod::FilterCmdTable(const CString& sFilter) const
+CTable CAdminMod::FilterCmdTable(const CString& sFilter) const
 {
 	CTable Table;
 	Table.AddColumn("Command");
@@ -1523,7 +1523,7 @@ CTable CSettingsMod::FilterCmdTable(const CString& sFilter) const
 }
 
 template <typename V>
-CTable CSettingsMod::FilterVarTable(const std::vector<V>& vVars, const CString& sFilter) const
+CTable CAdminMod::FilterVarTable(const std::vector<V>& vVars, const CString& sFilter) const
 {
 	CTable Table;
 	Table.AddColumn("Variable");
@@ -1541,12 +1541,12 @@ CTable CSettingsMod::FilterVarTable(const std::vector<V>& vVars, const CString& 
 	return Table;
 }
 
-void CSettingsMod::PutError(const CString& sTgt, const CString& sError)
+void CAdminMod::PutError(const CString& sTgt, const CString& sError)
 {
 	PutLine(sTgt, "Error: " + sError);
 }
 
-void CSettingsMod::PutLine(const CString& sTgt, const CString& sLine)
+void CAdminMod::PutLine(const CString& sTgt, const CString& sLine)
 {
 	if (CClient* pClient = GetClient())
 		pClient->PutModule(sTgt, sLine);
@@ -1556,7 +1556,7 @@ void CSettingsMod::PutLine(const CString& sTgt, const CString& sLine)
 		pUser->PutModule(sTgt, sLine);
 }
 
-void CSettingsMod::PutTable(const CString& sTgt, const CTable& Table)
+void CAdminMod::PutTable(const CString& sTgt, const CTable& Table)
 {
 	CString sLine;
 	unsigned int i = 0;
@@ -1564,7 +1564,7 @@ void CSettingsMod::PutTable(const CString& sTgt, const CTable& Table)
 		PutLine(sTgt, sLine);
 }
 
-template<> void TModInfo<CSettingsMod>(CModInfo& Info) {
+template<> void TModInfo<CAdminMod>(CModInfo& Info) {
 }
 
-USERMODULEDEFS(CSettingsMod, "Access ZNC settings conveniently through IRC.")
+USERMODULEDEFS(CAdminMod, "Administer ZNC conveniently through IRC.")
