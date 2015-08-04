@@ -93,6 +93,16 @@ struct Variable
 	std::function<bool(T*, CString&)> resetter;
 };
 
+template <typename V>
+static bool CanModify(const CUser* pUser, const Variable<V>& Var)
+{
+	if (!pUser->IsAdmin() && (Var.flags & RequiresAdmin))
+		return false;
+	if (!pUser->IsAdmin() && pUser->DenySetBindHost() && (Var.flags & RequiresSetBindHost))
+		return false;
+	return true;
+}
+
 static const std::vector<Variable<CZNC>> GlobalVars = {
 	{
 		"AnonIPLimit", IntType, NoFlags,
@@ -1398,9 +1408,7 @@ void CSettingsMod::OnSetCommand(T* pTarget, const CString& sTgt, const CString& 
 	for (const auto& Var : vVars) {
 		if (Var.name.WildCmp(sVar, CString::CaseInsensitive)) {
 			CString sError;
-			if (!GetUser()->IsAdmin() && (Var.flags & RequiresAdmin)) {
-				PutLine(sTgt, "Error: access denied");
-			} else if (!GetUser()->IsAdmin() && GetUser()->DenySetBindHost() && (Var.flags & RequiresSetBindHost)) {
+			if (!CanModify(GetUser(), Var)) {
 				PutLine(sTgt, "Error: access denied");
 			} else if (!Var.setter(pTarget, sVal, sError)) {
 				PutLine(sTgt, sError);
@@ -1436,9 +1444,7 @@ void CSettingsMod::OnResetCommand(T* pTarget, const CString& sTgt, const CString
 	for (const auto& Var : vVars) {
 		if (Var.name.WildCmp(sVar, CString::CaseInsensitive)) {
 			CString sError;
-			if (!GetUser()->IsAdmin() && (Var.flags & RequiresAdmin)) {
-				PutLine(sTgt, "Error: access denied");
-			} else if (!GetUser()->IsAdmin() && GetUser()->DenySetBindHost() && (Var.flags & RequiresSetBindHost)) {
+			if (!CanModify(GetUser(), Var)) {
 				PutLine(sTgt, "Error: access denied");
 			} else if (!Var.resetter) {
 				PutLine(sTgt, "Error: reset not supported!");
