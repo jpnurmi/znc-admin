@@ -76,11 +76,17 @@ static const char* VarTypes[] = {
 	"String", "Boolean", "Integer", "Double", "List"
 };
 
+enum VarFlag {
+	NoFlags, RequiresAdmin, RequiresSetBindHost
+};
+typedef unsigned VarFlags;
+
 template <typename T>
 struct Variable
 {
 	CString name;
 	VarType type;
+	VarFlags flags;
 	CString description;
 	std::function<CString(const T*)> getter;
 	std::function<bool(T*, const CString&, CString&)> setter;
@@ -89,7 +95,7 @@ struct Variable
 
 static const std::vector<Variable<CZNC>> GlobalVars = {
 	{
-		"AnonIPLimit", IntType,
+		"AnonIPLimit", IntType, NoFlags,
 		"The limit of anonymous unidentified connections per IP.",
 		[](const CZNC* pZNC) {
 			return CString(pZNC->GetAnonIPLimit());
@@ -104,7 +110,7 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 		}
 	},
 	{
-		"BindHost", ListType,
+		"BindHost", ListType, NoFlags,
 		"The list of allowed bindhosts.",
 		[](const CZNC* pZNC) {
 			const VCString& vsHosts = pZNC->GetBindHosts();
@@ -123,7 +129,7 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 		},
 	},
 	{
-		"ConnectDelay", IntType,
+		"ConnectDelay", IntType, NoFlags,
 		"The number of seconds every IRC connection is delayed.",
 		[](const CZNC* pZNC) {
 			return CString(pZNC->GetConnectDelay());
@@ -138,7 +144,7 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 		}
 	},
 	{
-		"HideVersion", BoolType,
+		"HideVersion", BoolType, NoFlags,
 		"Whether the version number is hidden from the web interface and CTCP VERSION replies.",
 		[](const CZNC* pZNC) {
 			return CString(pZNC->GetHideVersion());
@@ -153,7 +159,7 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 		}
 	},
 	{
-		"MaxBufferSize", IntType,
+		"MaxBufferSize", IntType, NoFlags,
 		"The maximum playback buffer size. Only admin users can exceed the limit.",
 		[](const CZNC* pZNC) {
 			return CString(pZNC->GetMaxBufferSize());
@@ -168,7 +174,7 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 		}
 	},
 	{
-		"Motd", ListType,
+		"Motd", ListType, NoFlags,
 		"The list of 'message of the day' lines that are sent to clients on connect via notice from *status.",
 		[](const CZNC* pZNC) {
 			const VCString& vsMotd = pZNC->GetMotd();
@@ -185,7 +191,7 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 	},
 	// TODO: PidFile
 	{
-		"ProtectWebSessions", BoolType,
+		"ProtectWebSessions", BoolType, NoFlags,
 		"Whether IP changing during each web session is disallowed.",
 		[](const CZNC* pZNC) {
 			return CString(pZNC->GetProtectWebSessions());
@@ -200,7 +206,7 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 		}
 	},
 	{
-		"ServerThrottle", IntType,
+		"ServerThrottle", IntType, NoFlags,
 		"The number of seconds between connect attempts to the same hostname.",
 		[](const CZNC* pZNC) {
 			return CString(pZNC->GetServerThrottle());
@@ -215,7 +221,7 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 		}
 	},
 	{
-		"Skin", StringType,
+		"Skin", StringType, NoFlags,
 		"The default web interface skin.",
 		[](const CZNC* pZNC) {
 			return pZNC->GetSkinName();
@@ -233,7 +239,7 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 	// TODO: SSLCiphers
 	// TODO: SSLProtocols
 	{
-		"StatusPrefix", StringType,
+		"StatusPrefix", StringType, NoFlags,
 		"The default prefix for status and module queries.",
 		[](const CZNC* pZNC) {
 			return pZNC->GetSkinName();
@@ -248,7 +254,7 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 		}
 	},
 	{
-		"TrustedProxy", ListType,
+		"TrustedProxy", ListType, NoFlags,
 		"The list of trusted proxies.",
 		[](const CZNC* pZNC) {
 			const VCString& vsProxies = pZNC->GetTrustedProxies();
@@ -270,24 +276,22 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 
 static const std::vector<Variable<CUser>> UserVars = {
 	{
-		"Admin", BoolType,
+		"Admin", BoolType, RequiresAdmin,
 		"Whether the user has admin rights.",
 		[](const CUser* pUser) {
 			return CString(pUser->IsAdmin());
 		},
 		[](CUser* pUser, const CString& sVal, CString& sError) {
-			if (!pUser->IsAdmin()) {
-				sError = "Error: access denied";
-				return false;
-			}
-
 			pUser->SetAdmin(sVal.ToBool());
 			return true;
 		},
-		nullptr
+		[](CUser* pUser, CString& sError) {
+			pUser->SetAdmin(false);
+			return true;
+		}
 	},
 	{
-		"Allow", ListType,
+		"Allow", ListType, NoFlags,
 		"The list of allowed IPs for the user. Wildcards (*) are supported.",
 		[](const CUser* pUser) {
 			const SCString& ssHosts = pUser->GetAllowedHosts();
@@ -306,7 +310,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 		}
 	},
 	{
-		"AltNick", StringType,
+		"AltNick", StringType, NoFlags,
 		"The default alternate nick.",
 		[](const CUser* pUser) {
 			return pUser->GetAltNick();
@@ -321,7 +325,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 		}
 	},
 	{
-		"AppendTimestamp", BoolType,
+		"AppendTimestamp", BoolType, NoFlags,
 		"Whether timestamps are appended to buffer playback messages.",
 		[](const CUser* pUser) {
 			return CString(pUser->GetTimestampAppend());
@@ -336,7 +340,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 		}
 	},
 	{
-		"AutoClearChanBuffer", BoolType,
+		"AutoClearChanBuffer", BoolType, NoFlags,
 		"Whether channel buffers are automatically cleared after playback.",
 		[](const CUser* pUser) {
 			return CString(pUser->AutoClearChanBuffer());
@@ -351,7 +355,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 		}
 	},
 	{
-		"AutoClearQueryBuffer", BoolType,
+		"AutoClearQueryBuffer", BoolType, NoFlags,
 		"Whether query buffers are automatically cleared after playback.",
 		[](const CUser* pUser) {
 			return CString(pUser->AutoClearQueryBuffer());
@@ -366,18 +370,13 @@ static const std::vector<Variable<CUser>> UserVars = {
 		}
 	},
 	{
-		"BindHost", StringType,
+		"BindHost", StringType, RequiresSetBindHost,
 		"The default bind host.",
 		[](const CUser* pUser) {
 			return pUser->GetBindHost();
 		},
 		[](CUser* pUser, const CString& sVal, CString& sError) {
 			// TODO: move sanity checking to CUser::SetBindHost()
-			if (!pUser->DenySetBindHost() && !pUser->IsAdmin()) {
-				sError = "Error: access denied";
-				return false;
-			}
-
 			if (sVal.Equals(pUser->GetBindHost())) {
 				sError = "This bind host is already set!";
 				return false;
@@ -406,7 +405,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 		nullptr
 	},
 	{
-		"ChanBufferSize", IntType,
+		"ChanBufferSize", IntType, NoFlags,
 		"The maximum amount of lines stored for each channel playback buffer.",
 		[](const CUser* pUser) {
 			return CString(pUser->GetChanBufferSize());
@@ -425,7 +424,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 		},
 	},
 	{
-		"ChanModes", StringType,
+		"ChanModes", StringType, NoFlags,
 		"The default modes ZNC sets when joining an empty channel.",
 		[](const CUser* pUser) {
 			return pUser->GetDefaultChanModes();
@@ -441,7 +440,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 	},
 #ifdef HAVE_ICU
 	{
-		"ClientEncoding", StringType,
+		"ClientEncoding", StringType, NoFlags,
 		"The default client encoding.",
 		[](const CUser* pUser) {
 			return pUser->GetClientEncoding();
@@ -457,7 +456,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 	},
 #endif
 	{
-		"CTCPReply", ListType,
+		"CTCPReply", ListType, NoFlags,
 		"A list of CTCP request-reply-pairs. Syntax: <request> <reply>.",
 		[](const CUser* pUser) {
 			VCString vsReplies;
@@ -489,55 +488,49 @@ static const std::vector<Variable<CUser>> UserVars = {
 		}
 	},
 	{
-		"DCCBindHost", StringType,
+		"DCCBindHost", StringType, RequiresAdmin,
 		"An optional bindhost for DCC connections.",
 		[](const CUser* pUser) {
 			return pUser->GetDCCBindHost();
 		},
 		[](CUser* pUser, const CString& sVal, CString& sError) {
-			if (!pUser->IsAdmin()) {
-				sError = "Error: access denied";
-				return false;
-			}
 			pUser->SetDCCBindHost(sVal);
 			return true;
 		},
 		nullptr
 	},
 	{
-		"DenyLoadMod", BoolType,
+		"DenyLoadMod", BoolType, RequiresAdmin,
 		"Whether the user is denied access to load modules.",
 		[](const CUser* pUser) {
 			return CString(pUser->DenyLoadMod());
 		},
 		[](CUser* pUser, const CString& sVal, CString& sError) {
-			if (!pUser->IsAdmin()) {
-				sError = "Error: access denied";
-				return false;
-			}
 			pUser->SetDenyLoadMod(sVal.ToBool());
 			return true;
 		},
-		nullptr
+		[](CUser* pUser, CString& sError) {
+			pUser->SetDenyLoadMod(false);
+			return true;
+		}
 	},
 	{
-		"DenySetBindHost", BoolType,
+		"DenySetBindHost", BoolType, RequiresAdmin,
 		"Whether the user is denied access to set a bind host.",
 		[](const CUser* pUser) {
 			return CString(pUser->DenySetBindHost());
 		},
 		[](CUser* pUser, const CString& sVal, CString& sError) {
-			if (!pUser->IsAdmin()) {
-				sError = "Error: access denied";
-				return false;
-			}
 			pUser->SetDenySetBindHost(sVal.ToBool());
 			return true;
 		},
-		nullptr
+		[](CUser* pUser, CString& sError) {
+			pUser->SetDenySetBindHost(false);
+			return true;
+		}
 	},
 	{
-		"Ident", StringType,
+		"Ident", StringType, NoFlags,
 		"The default ident.",
 		[](const CUser* pUser) {
 			return pUser->GetIdent();
@@ -549,7 +542,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 		nullptr
 	},
 	{
-		"JoinTries", IntType,
+		"JoinTries", IntType, NoFlags,
 		"The amount of times channels are attempted to join in case of a failure.",
 		[](const CUser* pUser) {
 			return CString(pUser->JoinTries());
@@ -564,7 +557,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 		}
 	},
 	{
-		"MaxJoins", IntType,
+		"MaxJoins", IntType, NoFlags,
 		"The maximum number of channels ZNC joins at once.",
 		[](const CUser* pUser) {
 			return CString(pUser->MaxJoins());
@@ -579,16 +572,12 @@ static const std::vector<Variable<CUser>> UserVars = {
 		}
 	},
 	{
-		"MaxNetworks", IntType,
+		"MaxNetworks", IntType, RequiresAdmin,
 		"The maximum number of networks the user is allowed to have.",
 		[](const CUser* pUser) {
 			return CString(pUser->MaxNetworks());
 		},
 		[](CUser* pUser, const CString& sVal, CString& sError) {
-			if (!pUser->IsAdmin()) {
-				sError = "Error: access denied";
-				return false;
-			}
 			pUser->SetMaxNetworks(sVal.ToUInt());
 			return true;
 		},
@@ -598,7 +587,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 		}
 	},
 	{
-		"MaxQueryBuffers", IntType,
+		"MaxQueryBuffers", IntType, NoFlags,
 		"The maximum number of query buffers that are stored.",
 		[](const CUser* pUser) {
 			return CString(pUser->MaxQueryBuffers());
@@ -613,7 +602,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 		}
 	},
 	{
-		"MultiClients", BoolType,
+		"MultiClients", BoolType, NoFlags,
 		"Whether multiple clients are allowed to connect simultaneously.",
 		[](const CUser* pUser) {
 			return CString(pUser->MultiClients());
@@ -628,7 +617,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 		}
 	},
 	{
-		"Nick", StringType,
+		"Nick", StringType, NoFlags,
 		"The default primary nick.",
 		[](const CUser* pUser) {
 			return pUser->GetNick();
@@ -643,7 +632,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 		}
 	},
 	{
-		"PrependTimestamp", BoolType,
+		"PrependTimestamp", BoolType, NoFlags,
 		"Whether timestamps are prepended to buffer playback messages.",
 		[](const CUser* pUser) {
 			return CString(pUser->GetTimestampPrepend());
@@ -658,7 +647,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 		}
 	},
 	{
-		"Password", StringType,
+		"Password", StringType, NoFlags,
 		"",
 		[](const CUser* pUser) {
 			return CString(".", pUser->GetPass().size());
@@ -672,7 +661,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 		nullptr
 	},
 	{
-		"QueryBufferSize", IntType,
+		"QueryBufferSize", IntType, NoFlags,
 		"The maximum amount of lines stored for each query playback buffer.",
 		[](const CUser* pUser) {
 			return CString(pUser->GetQueryBufferSize());
@@ -691,7 +680,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 		}
 	},
 	{
-		"QuitMsg", StringType,
+		"QuitMsg", StringType, NoFlags,
 		"The default quit message ZNC uses when disconnecting or shutting down.",
 		[](const CUser* pUser) {
 			return pUser->GetQuitMsg();
@@ -706,7 +695,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 		}
 	},
 	{
-		"RealName", StringType,
+		"RealName", StringType, NoFlags,
 		"The default real name.",
 		[](const CUser* pUser) {
 			return pUser->GetRealName();
@@ -721,7 +710,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 		}
 	},
 	{
-		"Skin", StringType,
+		"Skin", StringType, NoFlags,
 		"The web interface skin.",
 		[](const CUser* pUser) {
 			return pUser->GetSkinName();
@@ -736,7 +725,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 		}
 	},
 	{
-		"SettingsPrefix", StringType,
+		"SettingsPrefix", StringType, NoFlags,
 		"A settings prefix (in addition to the status prefix) for settings queries.",
 		[](const CUser* pUser) {
 			CSettingsMod* pMod = dynamic_cast<CSettingsMod*>(pUser->GetModules().FindModule("settings"));
@@ -762,7 +751,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 		}
 	},
 	{
-		"StatusPrefix", StringType,
+		"StatusPrefix", StringType, NoFlags,
 		"The prefix for status and module queries.",
 		[](const CUser* pUser) {
 			return pUser->GetStatusPrefix();
@@ -777,7 +766,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 		}
 	},
 	{
-		"TimestampFormat", StringType,
+		"TimestampFormat", StringType, NoFlags,
 		"The format of the timestamps used in buffer playback messages.",
 		[](const CUser* pUser) {
 			return pUser->GetTimestampFormat();
@@ -792,7 +781,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 		}
 	},
 	{
-		"Timezone", StringType,
+		"Timezone", StringType, NoFlags,
 		"The timezone used for timestamps in buffer playback messages.",
 		[](const CUser* pUser) {
 			return pUser->GetTimezone();
@@ -810,7 +799,7 @@ static const std::vector<Variable<CUser>> UserVars = {
 
 static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 	{
-		"AltNick", StringType,
+		"AltNick", StringType, NoFlags,
 		"An optional network specific alternate nick used if the primary nick is reserved.",
 		[](const CIRCNetwork* pNetwork) {
 			return pNetwork->GetAltNick();
@@ -825,18 +814,13 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 		}
 	},
 	{
-		"BindHost", StringType,
+		"BindHost", StringType, RequiresSetBindHost,
 		"An optional network specific bind host.",
 		[](const CIRCNetwork* pNetwork) {
 			return pNetwork->GetBindHost();
 		},
 		[](CIRCNetwork* pNetwork, const CString& sVal, CString& sError) {
 			// TODO: move the sanity checking to CIRCNetwork::SetBindHost()
-			if (pNetwork->GetUser()->DenySetBindHost() && !pNetwork->GetUser()->IsAdmin()) {
-				sError = "Error: access denied!";
-				return false;
-			}
-
 			if (sVal.Equals(pNetwork->GetBindHost())) {
 				sError = "This bind host is already set!";
 				return false;
@@ -869,7 +853,7 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 	},
 #ifdef HAVE_ICU
 	{
-		"Encoding", StringType,
+		"Encoding", StringType, NoFlags,
 		"An optional network specific client encoding.",
 		[](const CIRCNetwork* pNetwork) {
 			return pNetwork->GetEncoding();
@@ -885,7 +869,7 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 	},
 #endif
 	{
-		"FloodBurst", IntType,
+		"FloodBurst", IntType, NoFlags,
 		"The maximum amount of lines ZNC sends at once.",
 		[](const CIRCNetwork* pNetwork) {
 			return CString(pNetwork->GetFloodBurst());
@@ -900,7 +884,7 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 		}
 	},
 	{
-		"FloodRate", DoubleType,
+		"FloodRate", DoubleType, NoFlags,
 		"The number of lines per second ZNC sends after reaching the FloodBurst limit.",
 		[](const CIRCNetwork* pNetwork) {
 			return CString(pNetwork->GetFloodRate());
@@ -915,7 +899,7 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 		}
 	},
 	{
-		"Ident", StringType,
+		"Ident", StringType, NoFlags,
 		"An optional network specific ident.",
 		[](const CIRCNetwork* pNetwork) {
 			return pNetwork->GetIdent();
@@ -931,7 +915,7 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 	},
 	// TODO: IRCConnectEnabled?
 	{
-		"JoinDelay", IntType,
+		"JoinDelay", IntType, NoFlags,
 		"The delay in seconds, until channels are joined after getting connected.",
 		[](const CIRCNetwork* pNetwork) {
 			return CString(pNetwork->GetJoinDelay());
@@ -946,7 +930,7 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 		}
 	},
 	{
-		"Nick", StringType,
+		"Nick", StringType, NoFlags,
 		"An optional network specific primary nick.",
 		[](const CIRCNetwork* pNetwork) {
 			return pNetwork->GetNick();
@@ -961,7 +945,7 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 		}
 	},
 	{
-		"QuitMsg", StringType,
+		"QuitMsg", StringType, NoFlags,
 		"An optional network specific quit message ZNC uses when disconnecting or shutting down.",
 		[](const CIRCNetwork* pNetwork) {
 			return pNetwork->GetQuitMsg();
@@ -976,7 +960,7 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 		}
 	},
 	{
-		"RealName", StringType,
+		"RealName", StringType, NoFlags,
 		"An optional network specific real name.",
 		[](const CIRCNetwork* pNetwork) {
 			return pNetwork->GetRealName();
@@ -994,7 +978,7 @@ static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
 
 static const std::vector<Variable<CChan>> ChanVars = {
 	{
-		"AutoClearChanBuffer", BoolType,
+		"AutoClearChanBuffer", BoolType, NoFlags,
 		"Whether the channel buffer is automatically cleared after playback.",
 		[](const CChan* pChan) {
 			CString sVal(pChan->AutoClearChanBuffer());
@@ -1012,7 +996,7 @@ static const std::vector<Variable<CChan>> ChanVars = {
 		}
 	},
 	{
-		"Buffer", IntType,
+		"Buffer", IntType, NoFlags,
 		"The maximum amount of lines stored for the channel specific playback buffer.",
 		[](const CChan* pChan) {
 			CString sVal(pChan->GetBufferCount());
@@ -1031,7 +1015,7 @@ static const std::vector<Variable<CChan>> ChanVars = {
 		}
 	},
 	{
-		"Detached", BoolType,
+		"Detached", BoolType, NoFlags,
 		"Whether the channel is detached.",
 		[](const CChan* pChan) {
 			return CString(pChan->IsDetached());
@@ -1053,7 +1037,7 @@ static const std::vector<Variable<CChan>> ChanVars = {
 		}
 	},
 	{
-		"Disabled", BoolType,
+		"Disabled", BoolType, NoFlags,
 		"Whether the channel is disabled.",
 		[](const CChan* pChan) {
 			return CString(pChan->IsDisabled());
@@ -1075,7 +1059,7 @@ static const std::vector<Variable<CChan>> ChanVars = {
 		}
 	},
 	{
-		"InConfig", BoolType,
+		"InConfig", BoolType, NoFlags,
 		"Whether the channel is stored in the config file.",
 		[](const CChan* pChan) {
 			return CString(pChan->InConfig());
@@ -1087,7 +1071,7 @@ static const std::vector<Variable<CChan>> ChanVars = {
 		nullptr
 	},
 	{
-		"Key", StringType,
+		"Key", StringType, NoFlags,
 		"An optional channel key.",
 		[](const CChan* pChan) {
 			return pChan->GetKey();
@@ -1102,7 +1086,7 @@ static const std::vector<Variable<CChan>> ChanVars = {
 		}
 	},
 	{
-		"Modes", StringType,
+		"Modes", StringType, NoFlags,
 		"An optional set of default channel modes ZNC sets when joining an empty channel.",
 		[](const CChan* pChan) {
 			return pChan->GetDefaultModes();
@@ -1414,7 +1398,11 @@ void CSettingsMod::OnSetCommand(T* pTarget, const CString& sTgt, const CString& 
 	for (const auto& Var : vVars) {
 		if (Var.name.WildCmp(sVar, CString::CaseInsensitive)) {
 			CString sError;
-			if (!Var.setter(pTarget, sVal, sError)) {
+			if (!GetUser()->IsAdmin() && (Var.flags & RequiresAdmin)) {
+				PutLine(sTgt, "Error: access denied");
+			} else if (!GetUser()->IsAdmin() && GetUser()->DenySetBindHost() && (Var.flags & RequiresSetBindHost)) {
+				PutLine(sTgt, "Error: access denied");
+			} else if (!Var.setter(pTarget, sVal, sError)) {
 				PutLine(sTgt, sError);
 			} else {
 				VCString vsValues;
@@ -1448,7 +1436,11 @@ void CSettingsMod::OnResetCommand(T* pTarget, const CString& sTgt, const CString
 	for (const auto& Var : vVars) {
 		if (Var.name.WildCmp(sVar, CString::CaseInsensitive)) {
 			CString sError;
-			if (!Var.resetter) {
+			if (!GetUser()->IsAdmin() && (Var.flags & RequiresAdmin)) {
+				PutLine(sTgt, "Error: access denied");
+			} else if (!GetUser()->IsAdmin() && GetUser()->DenySetBindHost() && (Var.flags & RequiresSetBindHost)) {
+				PutLine(sTgt, "Error: access denied");
+			} else if (!Var.resetter) {
 				PutLine(sTgt, "Error: reset not supported!");
 			} else if (!Var.resetter(pTarget, sError)) {
 				PutLine(sTgt, sError);
