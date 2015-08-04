@@ -43,6 +43,7 @@ public:
 	void SetPrefix(const CString& sPrefix);
 
 protected:
+	EModRet OnGlobalCommand(const CString& sTgt, const CString& sLine);
 	EModRet OnUserCommand(CUser* pUser, const CString& sTgt, const CString& sLine);
 	EModRet OnNetworkCommand(CIRCNetwork* pNetwork, const CString& sTgt, const CString& sLine);
 	EModRet OnChanCommand(CChan* pChan, const CString& sTgt, const CString& sLine);
@@ -81,6 +82,147 @@ struct Variable
 	CString description;
 	std::function<CString(const T*)> getter;
 	std::function<bool(T*, const CString&, CString&)> setter;
+};
+
+static const std::vector<Variable<CZNC>> GlobalVars = {
+	{
+		"AnonIPLimit", IntType,
+		"The limit of anonymous unidentified connections per IP.",
+		[](const CZNC* pZNC) {
+			return CString(pZNC->GetAnonIPLimit());
+		},
+		[](CZNC* pZNC, const CString& sVal, CString& sError) {
+			pZNC->SetAnonIPLimit(sVal.ToUInt());
+			return true;
+		}
+	},
+	{
+		"BindHost", ListType,
+		"The list of allowed bindhosts.",
+		[](const CZNC* pZNC) {
+			const VCString& vsHosts = pZNC->GetBindHosts();
+			return CString("\n").Join(vsHosts.begin(), vsHosts.end());
+		},
+		[](CZNC* pZNC, const CString& sVal, CString& sError) {
+			pZNC->ClearBindHosts();
+			VCString ssHosts;
+			sVal.Split(" ", ssHosts, false);
+			for (const CString& sHost : ssHosts)
+				pZNC->AddBindHost(sHost);
+			return true;
+		}
+	},
+	{
+		"ConnectDelay", IntType,
+		"The number of seconds every IRC connection is delayed.",
+		[](const CZNC* pZNC) {
+			return CString(pZNC->GetConnectDelay());
+		},
+		[](CZNC* pZNC, const CString& sVal, CString& sError) {
+			pZNC->SetConnectDelay(sVal.ToUInt());
+			return true;
+		}
+	},
+	{
+		"HideVersion", BoolType,
+		"Whether the version number is hidden from the web interface and CTCP VERSION replies.",
+		[](const CZNC* pZNC) {
+			return CString(pZNC->GetHideVersion());
+		},
+		[](CZNC* pZNC, const CString& sVal, CString& sError) {
+			pZNC->SetHideVersion(sVal.ToBool());
+			return true;
+		}
+	},
+	{
+		"MaxBufferSize", IntType,
+		"The maximum playback buffer size. Only admin users can exceed the limit.",
+		[](const CZNC* pZNC) {
+			return CString(pZNC->GetMaxBufferSize());
+		},
+		[](CZNC* pZNC, const CString& sVal, CString& sError) {
+			pZNC->SetMaxBufferSize(sVal.ToUInt());
+			return true;
+		}
+	},
+	{
+		"Motd", ListType,
+		"The list of 'message of the day' lines that are sent to clients on connect via notice from *status.",
+		[](const CZNC* pZNC) {
+			const VCString& vsMotd = pZNC->GetMotd();
+			return CString("\n").Join(vsMotd.begin(), vsMotd.end());
+		},
+		[](CZNC* pZNC, const CString& sVal, CString& sError) {
+			// TODO: multiple lines
+			pZNC->SetMotd(sVal);
+			return true;
+		}
+	},
+	// TODO: PidFile
+	{
+		"ProtectWebSessions", BoolType,
+		"Whether IP changing during each web session is disallowed.",
+		[](const CZNC* pZNC) {
+			return CString(pZNC->GetProtectWebSessions());
+		},
+		[](CZNC* pZNC, const CString& sVal, CString& sError) {
+			pZNC->SetProtectWebSessions(sVal.ToBool());
+			return true;
+		}
+	},
+	{
+		"ServerThrottle", IntType,
+		"The number of seconds between connect attempts to the same hostname.",
+		[](const CZNC* pZNC) {
+			return CString(pZNC->GetServerThrottle());
+		},
+		[](CZNC* pZNC, const CString& sVal, CString& sError) {
+			pZNC->SetServerThrottle(sVal.ToUInt());
+			return true;
+		}
+	},
+	{
+		"Skin", StringType,
+		"The default web interface skin.",
+		[](const CZNC* pZNC) {
+			return pZNC->GetSkinName();
+		},
+		[](CZNC* pZNC, const CString& sVal, CString& sError) {
+			pZNC->SetSkinName(sVal);
+			return true;
+		}
+	},
+	// TODO: SSLCertFile
+	// TODO: SSLCiphers
+	// TODO: SSLProtocols
+	{
+		"StatusPrefix", StringType,
+		"The default prefix for status and module queries.",
+		[](const CZNC* pZNC) {
+			return pZNC->GetSkinName();
+		},
+		[](CZNC* pZNC, const CString& sVal, CString& sError) {
+			pZNC->SetSkinName(sVal);
+			return true;
+		}
+	},
+	{
+		"TrustedProxy", ListType,
+		"The list of trusted proxies.",
+		[](const CZNC* pZNC) {
+			const VCString& vsProxies = pZNC->GetTrustedProxies();
+			return CString("\n").Join(vsProxies.begin(), vsProxies.end());
+		},
+		[](CZNC* pZNC, const CString& sVal, CString& sError) {
+			pZNC->ClearTrustedProxies();
+			SCString ssProxies;
+			sVal.Split(" ", ssProxies, false);
+			for (const CString& sProxy : ssProxies)
+				pZNC->AddTrustedProxy(sProxy);
+			return true;
+		}
+		// TODO: clear
+	},
 };
 
 static const std::vector<Variable<CUser>> UserVars = {
@@ -841,6 +983,9 @@ CModule::EModRet CSettingsMod::OnUserRaw(CString& sLine)
 		const CString sPfx = GetPrefix();
 
 		if (sTgt.TrimPrefix(GetUser()->GetStatusPrefix() + sPfx)) {
+			// <global>
+			if (sTgt.Equals("global"))
+				return OnGlobalCommand(sPfx + sTgt, sRest);
 			// <user>
 			if (CUser* pUser = CZNC::Get().FindUser(sTgt))
 				return OnUserCommand(pUser, sPfx + sTgt, sRest);
@@ -906,14 +1051,37 @@ CModule::EModRet CSettingsMod::OnUserRaw(CString& sLine)
 	return CONTINUE;
 }
 
-CModule::EModRet CSettingsMod::OnUserCommand(CUser* pUser, const CString& sTgt, const CString& sLine)
+CModule::EModRet CSettingsMod::OnGlobalCommand(const CString& sTgt, const CString& sLine)
 {
-	if (pUser != GetUser() && !GetUser()->IsAdmin()) {
+	const CString sCmd = sLine.Token(0);
+
+	if (!GetUser()->IsAdmin() && sCmd.Equals("Set")) {
 		PutLine(sTgt, "Error: access denied.");
 		return HALT;
 	}
 
+	if (sCmd.Equals("Help"))
+		OnHelpCommand(sTgt, sLine, GlobalVars);
+	else if (sCmd.Equals("List"))
+		OnListCommand(&CZNC::Get(), sTgt, sLine, GlobalVars);
+	else if (sCmd.Equals("Get"))
+		OnGetCommand(&CZNC::Get(), sTgt, sLine, GlobalVars);
+	else if (sCmd.Equals("Set"))
+		OnSetCommand(&CZNC::Get(), sTgt, sLine, GlobalVars);
+	else
+		PutLine(sTgt, "Unknown command!");
+
+	return HALT;
+}
+
+CModule::EModRet CSettingsMod::OnUserCommand(CUser* pUser, const CString& sTgt, const CString& sLine)
+{
 	const CString sCmd = sLine.Token(0);
+
+	if (pUser != GetUser() && !GetUser()->IsAdmin()) {
+		PutLine(sTgt, "Error: access denied.");
+		return HALT;
+	}
 
 	if (sCmd.Equals("Help"))
 		OnHelpCommand(sTgt, sLine, UserVars);
@@ -931,12 +1099,12 @@ CModule::EModRet CSettingsMod::OnUserCommand(CUser* pUser, const CString& sTgt, 
 
 CModule::EModRet CSettingsMod::OnNetworkCommand(CIRCNetwork* pNetwork, const CString& sTgt, const CString& sLine)
 {
+	const CString sCmd = sLine.Token(0);
+
 	if (pNetwork->GetUser() != GetUser() && !GetUser()->IsAdmin()) {
 		PutLine(sTgt, "Error: access denied.");
 		return HALT;
 	}
-
-	const CString sCmd = sLine.Token(0);
 
 	if (sCmd.Equals("Help"))
 		OnHelpCommand(sTgt, sLine, NetworkVars);
@@ -954,12 +1122,12 @@ CModule::EModRet CSettingsMod::OnNetworkCommand(CIRCNetwork* pNetwork, const CSt
 
 CModule::EModRet CSettingsMod::OnChanCommand(CChan* pChan, const CString& sTgt, const CString& sLine)
 {
+	const CString sCmd = sLine.Token(0);
+
 	if (pChan->GetNetwork()->GetUser() != GetUser() && !GetUser()->IsAdmin()) {
 		PutLine(sTgt, "Error: access denied.");
 		return HALT;
 	}
-
-	const CString sCmd = sLine.Token(0);
 
 	if (sCmd.Equals("Help"))
 		OnHelpCommand(sTgt, sLine, ChanVars);
