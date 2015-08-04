@@ -214,9 +214,54 @@ static const std::vector<Variable<CZNC>> GlobalVars = {
 			return true;
 		}
 	},
-	// TODO: SSLCertFile
-	// TODO: SSLCiphers
-	// TODO: SSLProtocols
+	{
+		"SSLCertFile", StringType,
+		"The TLS/SSL certificate file from which ZNC reads its server certificate.",
+		[](const CZNC* pZNC) {
+			return pZNC->GetSSLCertFile();
+		},
+		[](CUser* pModifier, CZNC* pZNC, const CString& sVal, CString& sError) {
+			pZNC->SetSSLCertFile(sVal);
+			return true;
+		},
+		[](CUser* pModifier, CZNC* pZNC, CString& sError) {
+			pZNC->SetSSLCertFile(pZNC->GetZNCPath() + "/znc.pem");
+			return true;
+		},
+	},
+	{
+		"SSLCiphers", StringType,
+		"The allowed SSL ciphers. Default value is from Mozilla's recomendations.",
+		[](const CZNC* pZNC) {
+			return pZNC->GetSSLCiphers();
+		},
+		[](CUser* pModifier, CZNC* pZNC, const CString& sVal, CString& sError) {
+			pZNC->SetSSLCiphers(sVal);
+			return true;
+		},
+		[](CUser* pModifier, CZNC* pZNC, CString& sError) {
+			pZNC->SetSSLCiphers("");
+			return true;
+		},
+	},
+	{
+		"SSLProtocols", StringType,
+		"The accepted SSL protocols. Available protocols are All, SSLv2, SSLv3, TLSv1, TLSv1.1 and TLSv1.2.",
+		[](const CZNC* pZNC) {
+			return pZNC->GetSSLProtocols();
+		},
+		[](CUser* pModifier, CZNC* pZNC, const CString& sVal, CString& sError) {
+			if (!pZNC->SetSSLProtocols(sVal)) {
+				sError = "unknown protocol";
+				return false;
+			}
+			return true;
+		},
+		[](CUser* pModifier, CZNC* pZNC, CString& sError) {
+			pZNC->SetSSLProtocols("");
+			return true;
+		},
+	},
 	{
 		"StatusPrefix", StringType,
 		"The default prefix for status and module queries.",
