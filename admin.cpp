@@ -1189,11 +1189,41 @@ private:
 					return;
 				}
 
-				if (pZNC->DeleteUser(pUser->GetUserName())) {
+				if (pZNC->DeleteUser(pUser->GetUserName()))
 					PutSuccess("user '" + pUser->GetUserName() + "' deleted");
-				} else {
+				else
 					PutError("internal error");
+			}
+		},
+		{
+			"ListMods [filter]",
+			"Lists global modules.",
+			[=](CZNC* pZNC, const CString& sArgs) {
+				const CString sFilter = sArgs.Token(0);
+
+				std::set<CModInfo> sMods;
+				pZNC->GetModules().GetAvailableMods(sMods, CModInfo::GlobalModule);
+
+				CTable Table;
+				Table.AddColumn("Module");
+				Table.AddColumn("Description");
+
+				for (const CModInfo& Info : sMods) {
+					const CString& sName = Info.GetName();
+					if (sFilter.empty() || sName.StartsWith(sFilter) || sName.WildCmp(sFilter, CString::CaseInsensitive)) {
+						Table.AddRow();
+						if (pZNC->GetModules().FindModule(sName))
+							Table.SetCell("Module", sName + " (loaded)");
+						else
+							Table.SetCell("Module", sName);
+						Table.SetCell("Description", Info.GetDescription().Ellipsize(128));
+					}
 				}
+
+				if (Table.empty())
+					PutError("no matches for '" + sFilter + "'");
+				else
+					PutTable(Table);
 			}
 		},
 		{
@@ -1213,6 +1243,86 @@ private:
 				}
 
 				PutTable(Table);
+			}
+		},
+		{
+			"LoadMod <module> [args]",
+			"Loads a global module.",
+			[=](CZNC* pZNC, const CString& sArgs) {
+				const CString sMod = sArgs.Token(0);
+				if (sMod.empty()) {
+					PutUsage("LoadMod <module> [args]");
+					return;
+				}
+
+				CModInfo Info;
+				CString sError;
+				if (!pZNC->GetModules().GetModInfo(Info, sMod, sError))
+					PutError(sError);
+				else if (!pZNC->GetModules().LoadModule(sMod, sArgs.Token(1, true), CModInfo::GlobalModule, nullptr, nullptr, sError))
+					PutError(sError);
+				else
+					PutSuccess("module '" + sMod + "' loaded");
+			}
+		},
+		{
+			"ReloadMod <module> [args]",
+			"Reloads a global module.",
+			[=](CZNC* pZNC, const CString& sArgs) {
+				const CString sMod = sArgs.Token(0);
+				if (sMod.empty()) {
+					PutUsage("ReloadMod <module> [args]");
+					return;
+				}
+
+				CModInfo Info;
+				CString sError;
+				if (!pZNC->GetModules().GetModInfo(Info, sMod, sError))
+					PutError(sError);
+				else if (!pZNC->GetModules().ReloadModule(sMod, sArgs.Token(1, true), nullptr, nullptr, sError))
+					PutError(sError);
+				else
+					PutSuccess("module '" + sMod + "' reloaded");
+			}
+		},
+		{
+			"UnloadMod <module> [args]",
+			"Unloads a global module.",
+			[=](CZNC* pZNC, const CString& sArgs) {
+				const CString sMod = sArgs.Token(0);
+				if (sMod.empty()) {
+					PutUsage("UnloadMod <module> [args]");
+					return;
+				}
+
+				CModInfo Info;
+				CString sError;
+				if (!pZNC->GetModules().GetModInfo(Info, sMod, sError))
+					PutError(sError);
+				else if (!pZNC->GetModules().UnloadModule(sMod, sError))
+					PutError(sError);
+				else
+					PutSuccess("module '" + sMod + "' unloaded");
+			}
+		},
+		{
+			"UpdateMod <module>",
+			"Reloads all instances of a module.",
+			[=](CZNC* pZNC, const CString& sArgs) {
+				const CString sMod = sArgs.Token(0);
+				if (sMod.empty()) {
+					PutUsage("UpdateMod <module>");
+					return;
+				}
+
+				CModInfo Info;
+				CString sError;
+				if (!pZNC->GetModules().GetModInfo(Info, sMod, sError))
+					PutError(sError);
+				else if (!pZNC->UpdateModule(sMod))
+					PutError("module '" + sMod + "' not updated");
+				else
+					PutSuccess("module '" + sMod + "' updated");
 			}
 		},
 	};
