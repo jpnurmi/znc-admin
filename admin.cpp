@@ -1199,6 +1199,30 @@ private:
 					PutError("internal error");
 			}
 		},
+		{
+			"ListUsers [filter]",
+			"Lists all ZNC users.",
+			[=](CZNC* pZNC, const CString& sArgs) {
+				if (!GetUser()->IsAdmin()) {
+					PutError("access denied");
+					return;
+				}
+
+				CTable Table;
+				Table.AddColumn("Username");
+				Table.AddColumn("Networks");
+				Table.AddColumn("Clients");
+
+				for (const auto& it : pZNC->GetUserMap()) {
+					Table.AddRow();
+					Table.SetCell("Username", it.first);
+					Table.SetCell("Networks", CString(it.second->GetNetworks().size()));
+					Table.SetCell("Clients", CString(it.second->GetAllClients().size()));
+				}
+
+				PutTable(Table);
+			}
+		},
 	};
 
 	const std::vector<Command<CUser>> UserCmds = {
