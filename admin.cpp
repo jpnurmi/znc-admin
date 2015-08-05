@@ -39,9 +39,9 @@ struct Variable
 	CString name;
 	VarType type;
 	CString description;
-	std::function<CString(const T*)> getter;
-	std::function<bool(T*, const CString&)> setter;
-	std::function<bool(T*)> resetter;
+	std::function<CString(const T*)> get;
+	std::function<bool(T*, const CString&)> set;
+	std::function<bool(T*)> reset;
 };
 
 template <typename T>
@@ -1681,7 +1681,7 @@ void CAdminMod::OnGetCommand(T* pObject, const CString& sLine, const std::vector
 	for (const auto& Var : vVars) {
 		if (Var.name.WildCmp(sVar, CString::CaseInsensitive)) {
 			VCString vsValues;
-			Var.getter(pObject).Split("\n", vsValues, false);
+			Var.get(pObject).Split("\n", vsValues, false);
 			if (vsValues.empty()) {
 				PutLine(Var.name + " = ");
 			} else {
@@ -1710,9 +1710,9 @@ void CAdminMod::OnSetCommand(T* pObject, const CString& sLine, const std::vector
 	bool bFound = false;
 	for (const auto& Var : vVars) {
 		if (Var.name.WildCmp(sVar, CString::CaseInsensitive)) {
-			if (Var.setter(pObject, sVal)) {
+			if (Var.set(pObject, sVal)) {
 				VCString vsValues;
-				Var.getter(pObject).Split("\n", vsValues, false);
+				Var.get(pObject).Split("\n", vsValues, false);
 				if (vsValues.empty()) {
 					PutLine(Var.name + " = ");
 				} else {
@@ -1741,11 +1741,11 @@ void CAdminMod::OnResetCommand(T* pObject, const CString& sLine, const std::vect
 	bool bFound = false;
 	for (const auto& Var : vVars) {
 		if (Var.name.WildCmp(sVar, CString::CaseInsensitive)) {
-			if (!Var.resetter) {
+			if (!Var.reset) {
 				PutError("reset not supported");
-			} else if (Var.resetter(pObject)) {
+			} else if (Var.reset(pObject)) {
 				VCString vsValues;
-				Var.getter(pObject).Split("\n", vsValues, false);
+				Var.get(pObject).Split("\n", vsValues, false);
 				if (vsValues.empty()) {
 					PutLine(Var.name + " = ");
 				} else {
