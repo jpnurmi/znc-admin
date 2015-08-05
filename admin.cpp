@@ -59,8 +59,8 @@ public:
 	void OnModCommand(const CString& sLine) override;
 	EModRet OnUserRaw(CString& sLine) override;
 
-	CString GetPrefix() const;
-	void SetPrefix(const CString& sPrefix);
+	CString GetInfix() const;
+	void SetInfix(const CString& sInfix);
 
 protected:
 	EModRet OnUserCommand(CUser* pUser, const CString& sTgt, const CString& sLine);
@@ -311,6 +311,32 @@ static const std::vector<Variable<CUser>> UserVars = {
 		},
 		[](CUser* pModifier, CUser* pTarget, CString& sError) {
 			pTarget->SetAdmin(false);
+			return true;
+		}
+	},
+	{
+		"AdminInfix", StringType,
+		"An infix (after the status prefix) for admin queries.",
+		[](const CUser* pTarget) {
+			CAdminMod* pMod = dynamic_cast<CAdminMod*>(pTarget->GetModules().FindModule("admin"));
+			return pMod ? pMod->GetInfix() : "";
+		},
+		[](CUser* pModifier, CUser* pTarget, const CString& sVal, CString& sError) {
+			CAdminMod* pMod = dynamic_cast<CAdminMod*>(pTarget->GetModules().FindModule("admin"));
+			if (!pMod) {
+				sError = "unable to find the module instance";
+				return false;
+			}
+			pMod->SetInfix(sVal);
+			return true;
+		},
+		[](CUser* pModifier, CUser* pTarget, CString& sError) {
+			CAdminMod* pMod = dynamic_cast<CAdminMod*>(pTarget->GetModules().FindModule("admin"));
+			if (!pMod) {
+				sError = "unable to find the module instance";
+				return false;
+			}
+			pMod->SetInfix(pModifier->GetStatusPrefix());
 			return true;
 		}
 	},
@@ -764,32 +790,6 @@ static const std::vector<Variable<CUser>> UserVars = {
 		}
 	},
 	{
-		"AdminPrefix", StringType,
-		"An admin prefix (in addition to the status prefix) for settings queries.",
-		[](const CUser* pTarget) {
-			CAdminMod* pMod = dynamic_cast<CAdminMod*>(pTarget->GetModules().FindModule("admin"));
-			return pMod ? pMod->GetPrefix() : "";
-		},
-		[](CUser* pModifier, CUser* pTarget, const CString& sVal, CString& sError) {
-			CAdminMod* pMod = dynamic_cast<CAdminMod*>(pTarget->GetModules().FindModule("admin"));
-			if (!pMod) {
-				sError = "unable to find the module instance";
-				return false;
-			}
-			pMod->SetPrefix(sVal);
-			return true;
-		},
-		[](CUser* pModifier, CUser* pTarget, CString& sError) {
-			CAdminMod* pMod = dynamic_cast<CAdminMod*>(pTarget->GetModules().FindModule("admin"));
-			if (!pMod) {
-				sError = "unable to find the module instance";
-				return false;
-			}
-			pMod->SetPrefix("*");
-			return true;
-		}
-	},
-	{
 		"StatusPrefix", StringType,
 		"The prefix for status and module queries.",
 		[](const CUser* pTarget) {
@@ -1138,17 +1138,17 @@ static const std::vector<Variable<CChan>> ChanVars = {
 	},
 };
 
-CString CAdminMod::GetPrefix() const
+CString CAdminMod::GetInfix() const
 {
-	CString sPrefix = GetNV("prefix");
-	if (sPrefix.empty())
-		sPrefix = GetUser()->GetStatusPrefix();
-	return sPrefix;
+	CString sInfix = GetNV("infix");
+	if (sInfix.empty())
+		sInfix = GetUser()->GetStatusPrefix();
+	return sInfix;
 }
 
-void CAdminMod::SetPrefix(const CString& sPrefix)
+void CAdminMod::SetInfix(const CString& sInfix)
 {
-	SetNV("prefix", sPrefix);
+	SetNV("infix", sInfix);
 }
 
 void CAdminMod::OnModCommand(const CString& sLine)
@@ -1163,7 +1163,7 @@ void CAdminMod::OnModCommand(const CString& sLine)
 	if (sCmd.Equals("Help")) {
 		HandleHelpCommand(sLine);
 
-		const CString sPfx = GetUser()->GetStatusPrefix() + GetPrefix();
+		const CString sPfx = GetUser()->GetStatusPrefix() + GetInfix();
 
 		if (sLine.Token(1).empty()) {
 			PutModule("To access settings of the current user or network, open a query");
@@ -1216,7 +1216,7 @@ CModule::EModRet CAdminMod::OnUserRaw(CString& sLine)
 	if (sCmd.Equals("ZNC") || sCmd.Equals("PRIVMSG")) {
 		CString sTgt = sCopy.Token(1);
 		const CString sRest = sCopy.Token(2, true).TrimPrefix_n(":");
-		const CString sPfx = GetPrefix();
+		const CString sPfx = GetInfix();
 
 		if (sTgt.TrimPrefix(GetUser()->GetStatusPrefix() + sPfx)) {
 			// <user>
