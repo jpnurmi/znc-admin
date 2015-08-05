@@ -94,1128 +94,1130 @@ private:
 	void PutTable(const CTable& Table, const CString& sTarget = "");
 
 	CString m_sTarget;
-};
 
-// TODO: expose the default constants needed by the reset methods?
 
-static const std::vector<Variable<CZNC>> GlobalVars = {
-	{
-		"AnonIPLimit", IntType,
-		"The limit of anonymous unidentified connections per IP.",
-		[](const CZNC* pZNC) {
-			return CString(pZNC->GetAnonIPLimit());
-		},
-		[](CUser* pAdmin, CZNC* pZNC, const CString& sVal, CString& sError) {
-			pZNC->SetAnonIPLimit(sVal.ToUInt());
-			return true;
-		},
-		[](CUser* pAdmin, CZNC* pZNC, CString& sError) {
-			pZNC->SetAnonIPLimit(10);
-			return true;
-		}
-	},
-	// TODO: BindHost
-	{
-		"ConnectDelay", IntType,
-		"The number of seconds every IRC connection is delayed.",
-		[](const CZNC* pZNC) {
-			return CString(pZNC->GetConnectDelay());
-		},
-		[](CUser* pAdmin, CZNC* pZNC, const CString& sVal, CString& sError) {
-			pZNC->SetConnectDelay(sVal.ToUInt());
-			return true;
-		},
-		[](CUser* pAdmin, CZNC* pZNC, CString& sError) {
-			pZNC->SetConnectDelay(5);
-			return true;
-		}
-	},
-	{
-		"HideVersion", BoolType,
-		"Whether the version number is hidden from the web interface and CTCP VERSION replies.",
-		[](const CZNC* pZNC) {
-			return CString(pZNC->GetHideVersion());
-		},
-		[](CUser* pAdmin, CZNC* pZNC, const CString& sVal, CString& sError) {
-			pZNC->SetHideVersion(sVal.ToBool());
-			return true;
-		},
-		[](CUser* pAdmin, CZNC* pZNC, CString& sError) {
-			pZNC->SetHideVersion(false);
-			return true;
-		}
-	},
-	{
-		"MaxBufferSize", IntType,
-		"The maximum playback buffer size. Only admin users can exceed the limit.",
-		[](const CZNC* pZNC) {
-			return CString(pZNC->GetMaxBufferSize());
-		},
-		[](CUser* pAdmin, CZNC* pZNC, const CString& sVal, CString& sError) {
-			pZNC->SetMaxBufferSize(sVal.ToUInt());
-			return true;
-		},
-		[](CUser* pAdmin, CZNC* pZNC, CString& sError) {
-			pZNC->SetMaxBufferSize(500);
-			return true;
-		}
-	},
-	{
-		"Motd", ListType,
-		"The list of 'message of the day' lines that are sent to clients on connect via notice from *status.",
-		[](const CZNC* pZNC) {
-			const VCString& vsMotd = pZNC->GetMotd();
-			return CString("\n").Join(vsMotd.begin(), vsMotd.end());
-		},
-		[](CUser* pAdmin, CZNC* pZNC, const CString& sVal, CString& sError) {
-			pZNC->AddMotd(sVal);
-			return true;
-		},
-		[](CUser* pAdmin, CZNC* pZNC, CString& sError) {
-			pZNC->ClearMotd();
-			return true;
-		},
-	},
-	// TODO: PidFile
-	{
-		"ProtectWebSessions", BoolType,
-		"Whether IP changing during each web session is disallowed.",
-		[](const CZNC* pZNC) {
-			return CString(pZNC->GetProtectWebSessions());
-		},
-		[](CUser* pAdmin, CZNC* pZNC, const CString& sVal, CString& sError) {
-			pZNC->SetProtectWebSessions(sVal.ToBool());
-			return true;
-		},
-		[](CUser* pAdmin, CZNC* pZNC, CString& sError) {
-			pZNC->SetProtectWebSessions(true);
-			return true;
-		}
-	},
-	{
-		"ServerThrottle", IntType,
-		"The number of seconds between connect attempts to the same hostname.",
-		[](const CZNC* pZNC) {
-			return CString(pZNC->GetServerThrottle());
-		},
-		[](CUser* pAdmin, CZNC* pZNC, const CString& sVal, CString& sError) {
-			pZNC->SetServerThrottle(sVal.ToUInt());
-			return true;
-		},
-		[](CUser* pAdmin, CZNC* pZNC, CString& sError) {
-			pZNC->SetServerThrottle(30);
-			return true;
-		}
-	},
-	{
-		"Skin", StringType,
-		"The default web interface skin.",
-		[](const CZNC* pZNC) {
-			return pZNC->GetSkinName();
-		},
-		[](CUser* pAdmin, CZNC* pZNC, const CString& sVal, CString& sError) {
-			pZNC->SetSkinName(sVal);
-			return true;
-		},
-		[](CUser* pAdmin, CZNC* pZNC, CString& sError) {
-			pZNC->SetSkinName("");
-			return true;
-		}
-	},
-	{
-		"SSLCertFile", StringType,
-		"The TLS/SSL certificate file from which ZNC reads its server certificate.",
-		[](const CZNC* pZNC) {
-			return pZNC->GetSSLCertFile();
-		},
-		[](CUser* pAdmin, CZNC* pZNC, const CString& sVal, CString& sError) {
-			pZNC->SetSSLCertFile(sVal);
-			return true;
-		},
-		[](CUser* pAdmin, CZNC* pZNC, CString& sError) {
-			pZNC->SetSSLCertFile(pZNC->GetZNCPath() + "/znc.pem");
-			return true;
-		},
-	},
-	{
-		"SSLCiphers", StringType,
-		"The allowed SSL ciphers. Default value is from Mozilla's recomendations.",
-		[](const CZNC* pZNC) {
-			return pZNC->GetSSLCiphers();
-		},
-		[](CUser* pAdmin, CZNC* pZNC, const CString& sVal, CString& sError) {
-			pZNC->SetSSLCiphers(sVal);
-			return true;
-		},
-		[](CUser* pAdmin, CZNC* pZNC, CString& sError) {
-			pZNC->SetSSLCiphers("");
-			return true;
-		},
-	},
-	{
-		"SSLProtocols", StringType,
-		"The accepted SSL protocols. Available protocols are All, SSLv2, SSLv3, TLSv1, TLSv1.1 and TLSv1.2.",
-		[](const CZNC* pZNC) {
-			return pZNC->GetSSLProtocols();
-		},
-		[](CUser* pAdmin, CZNC* pZNC, const CString& sVal, CString& sError) {
-			if (!pZNC->SetSSLProtocols(sVal)) {
-				sError = "unknown protocol";
-				return false;
-			}
-			return true;
-		},
-		[](CUser* pAdmin, CZNC* pZNC, CString& sError) {
-			pZNC->SetSSLProtocols("");
-			return true;
-		},
-	},
-	{
-		"StatusPrefix", StringType,
-		"The default prefix for status and module queries.",
-		[](const CZNC* pZNC) {
-			return pZNC->GetSkinName();
-		},
-		[](CUser* pAdmin, CZNC* pZNC, const CString& sVal, CString& sError) {
-			pZNC->SetSkinName(sVal);
-			return true;
-		},
-		[](CUser* pAdmin, CZNC* pZNC, CString& sError) {
-			pZNC->SetStatusPrefix("");
-			return true;
-		}
-	},
-	{
-		"TrustedProxy", ListType,
-		"The list of trusted proxies.",
-		[](const CZNC* pZNC) {
-			const VCString& vsProxies = pZNC->GetTrustedProxies();
-			return CString("\n").Join(vsProxies.begin(), vsProxies.end());
-		},
-		[](CUser* pAdmin, CZNC* pZNC, const CString& sVal, CString& sError) {
-			SCString ssProxies;
-			sVal.Split(" ", ssProxies, false);
-			for (const CString& sProxy : ssProxies)
-				pZNC->AddTrustedProxy(sProxy);
-			return true;
-		},
-		[](CUser* pAdmin, CZNC* pZNC, CString& sError) {
-			pZNC->ClearTrustedProxies();
-			return true;
-		}
-	},
-};
+	// TODO: expose the default constants needed by the reset methods?
 
-static const std::vector<Variable<CUser>> UserVars = {
-	{
-		"Admin", BoolType,
-		"Whether the user has admin rights.",
-		[](const CUser* pObject) {
-			return CString(pObject->IsAdmin());
-		},
-		[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
-			pObject->SetAdmin(sVal.ToBool());
-			return true;
-		},
-		[](CUser* pAdmin, CUser* pObject, CString& sError) {
-			pObject->SetAdmin(false);
-			return true;
-		}
-	},
-	{
-		"AdminInfix", StringType,
-		"An infix (after the status prefix) for admin queries.",
-		[](const CUser* pObject) {
-			CAdminMod* pMod = dynamic_cast<CAdminMod*>(pObject->GetModules().FindModule("admin"));
-			return pMod ? pMod->GetInfix() : "";
-		},
-		[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
-			CAdminMod* pMod = dynamic_cast<CAdminMod*>(pObject->GetModules().FindModule("admin"));
-			if (!pMod) {
-				sError = "unable to find the module instance";
-				return false;
+	const std::vector<Variable<CZNC>> GlobalVars = {
+		{
+			"AnonIPLimit", IntType,
+			"The limit of anonymous unidentified connections per IP.",
+			[](const CZNC* pZNC) {
+				return CString(pZNC->GetAnonIPLimit());
+			},
+			[](CUser* pAdmin, CZNC* pZNC, const CString& sVal, CString& sError) {
+				pZNC->SetAnonIPLimit(sVal.ToUInt());
+				return true;
+			},
+			[](CUser* pAdmin, CZNC* pZNC, CString& sError) {
+				pZNC->SetAnonIPLimit(10);
+				return true;
 			}
-			pMod->SetInfix(sVal);
-			return true;
 		},
-		[](CUser* pAdmin, CUser* pObject, CString& sError) {
-			CAdminMod* pMod = dynamic_cast<CAdminMod*>(pObject->GetModules().FindModule("admin"));
-			if (!pMod) {
-				sError = "unable to find the module instance";
-				return false;
+		// TODO: BindHost
+		{
+			"ConnectDelay", IntType,
+			"The number of seconds every IRC connection is delayed.",
+			[](const CZNC* pZNC) {
+				return CString(pZNC->GetConnectDelay());
+			},
+			[](CUser* pAdmin, CZNC* pZNC, const CString& sVal, CString& sError) {
+				pZNC->SetConnectDelay(sVal.ToUInt());
+				return true;
+			},
+			[](CUser* pAdmin, CZNC* pZNC, CString& sError) {
+				pZNC->SetConnectDelay(5);
+				return true;
 			}
-			pMod->SetInfix(pAdmin->GetStatusPrefix());
-			return true;
-		}
-	},
-	{
-		"Allow", ListType,
-		"The list of allowed IPs for the user. Wildcards (*) are supported.",
-		[](const CUser* pObject) {
-			const SCString& ssHosts = pObject->GetAllowedHosts();
-			return CString("\n").Join(ssHosts.begin(), ssHosts.end());
 		},
-		[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
-			SCString ssHosts;
-			sVal.Split(" ", ssHosts, false);
-			for (const CString& sHost : ssHosts)
-				pObject->AddAllowedHost(sHost);
-			return true;
-		},
-		[](CUser* pAdmin, CUser* pObject, CString& sError) {
-			pObject->ClearAllowedHosts();
-			return true;
-		}
-	},
-	{
-		"AltNick", StringType,
-		"The default alternate nick.",
-		[](const CUser* pObject) {
-			return pObject->GetAltNick();
-		},
-		[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
-			pObject->SetAltNick(sVal);
-			return true;
-		},
-		[](CUser* pAdmin, CUser* pObject, CString& sError) {
-			pObject->SetAltNick("");
-			return true;
-		}
-	},
-	{
-		"AppendTimestamp", BoolType,
-		"Whether timestamps are appended to buffer playback messages.",
-		[](const CUser* pObject) {
-			return CString(pObject->GetTimestampAppend());
-		},
-		[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
-			pObject->SetTimestampAppend(sVal.ToBool());
-			return true;
-		},
-		[](CUser* pAdmin, CUser* pObject, CString& sError) {
-			pObject->SetTimestampAppend(false);
-			return true;
-		}
-	},
-	{
-		"AutoClearChanBuffer", BoolType,
-		"Whether channel buffers are automatically cleared after playback.",
-		[](const CUser* pObject) {
-			return CString(pObject->AutoClearChanBuffer());
-		},
-		[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
-			pObject->SetAutoClearChanBuffer(sVal.ToBool());
-			return true;
-		},
-		[](CUser* pAdmin, CUser* pObject, CString& sError) {
-			pObject->SetAutoClearChanBuffer(true);
-			return true;
-		}
-	},
-	{
-		"AutoClearQueryBuffer", BoolType,
-		"Whether query buffers are automatically cleared after playback.",
-		[](const CUser* pObject) {
-			return CString(pObject->AutoClearQueryBuffer());
-		},
-		[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
-			pObject->SetAutoClearQueryBuffer(sVal.ToBool());
-			return true;
-		},
-		[](CUser* pAdmin, CUser* pObject, CString& sError) {
-			pObject->SetAutoClearQueryBuffer(true);
-			return true;
-		}
-	},
-	{
-		"BindHost", StringType,
-		"The default bind host.",
-		[](const CUser* pObject) {
-			return pObject->GetBindHost();
-		},
-		[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
-			if (!pAdmin->IsAdmin() && pAdmin->DenySetBindHost()) {
-				sError = "access denied";
-				return false;
+		{
+			"HideVersion", BoolType,
+			"Whether the version number is hidden from the web interface and CTCP VERSION replies.",
+			[](const CZNC* pZNC) {
+				return CString(pZNC->GetHideVersion());
+			},
+			[](CUser* pAdmin, CZNC* pZNC, const CString& sVal, CString& sError) {
+				pZNC->SetHideVersion(sVal.ToBool());
+				return true;
+			},
+			[](CUser* pAdmin, CZNC* pZNC, CString& sError) {
+				pZNC->SetHideVersion(false);
+				return true;
 			}
-			pObject->SetBindHost(sVal);
-			return true;
 		},
-		[](CUser* pAdmin, CUser* pObject, CString& sError) {
-			pObject->SetBindHost("");
-			return true;
-		}
-	},
-	{
-		"ChanBufferSize", IntType,
-		"The maximum amount of lines stored for each channel playback buffer.",
-		[](const CUser* pObject) {
-			return CString(pObject->GetChanBufferSize());
-		},
-		[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
-			if (!pObject->SetChanBufferSize(sVal.ToUInt(), pAdmin->IsAdmin())) {
-				sError = "exceeded limit " + CString(CZNC::Get().GetMaxBufferSize());
-				return false;
+		{
+			"MaxBufferSize", IntType,
+			"The maximum playback buffer size. Only admin users can exceed the limit.",
+			[](const CZNC* pZNC) {
+				return CString(pZNC->GetMaxBufferSize());
+			},
+			[](CUser* pAdmin, CZNC* pZNC, const CString& sVal, CString& sError) {
+				pZNC->SetMaxBufferSize(sVal.ToUInt());
+				return true;
+			},
+			[](CUser* pAdmin, CZNC* pZNC, CString& sError) {
+				pZNC->SetMaxBufferSize(500);
+				return true;
 			}
-			return true;
 		},
-		[](CUser* pAdmin, CUser* pObject, CString& sError) {
-			pObject->SetChanBufferSize(50);
-			return true;
+		{
+			"Motd", ListType,
+			"The list of 'message of the day' lines that are sent to clients on connect via notice from *status.",
+			[](const CZNC* pZNC) {
+				const VCString& vsMotd = pZNC->GetMotd();
+				return CString("\n").Join(vsMotd.begin(), vsMotd.end());
+			},
+			[](CUser* pAdmin, CZNC* pZNC, const CString& sVal, CString& sError) {
+				pZNC->AddMotd(sVal);
+				return true;
+			},
+			[](CUser* pAdmin, CZNC* pZNC, CString& sError) {
+				pZNC->ClearMotd();
+				return true;
+			},
 		},
-	},
-	{
-		"ChanModes", StringType,
-		"The default modes ZNC sets when joining an empty channel.",
-		[](const CUser* pObject) {
-			return pObject->GetDefaultChanModes();
+		// TODO: PidFile
+		{
+			"ProtectWebSessions", BoolType,
+			"Whether IP changing during each web session is disallowed.",
+			[](const CZNC* pZNC) {
+				return CString(pZNC->GetProtectWebSessions());
+			},
+			[](CUser* pAdmin, CZNC* pZNC, const CString& sVal, CString& sError) {
+				pZNC->SetProtectWebSessions(sVal.ToBool());
+				return true;
+			},
+			[](CUser* pAdmin, CZNC* pZNC, CString& sError) {
+				pZNC->SetProtectWebSessions(true);
+				return true;
+			}
 		},
-		[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
-			pObject->SetDefaultChanModes(sVal);
-			return true;
+		{
+			"ServerThrottle", IntType,
+			"The number of seconds between connect attempts to the same hostname.",
+			[](const CZNC* pZNC) {
+				return CString(pZNC->GetServerThrottle());
+			},
+			[](CUser* pAdmin, CZNC* pZNC, const CString& sVal, CString& sError) {
+				pZNC->SetServerThrottle(sVal.ToUInt());
+				return true;
+			},
+			[](CUser* pAdmin, CZNC* pZNC, CString& sError) {
+				pZNC->SetServerThrottle(30);
+				return true;
+			}
 		},
-		[](CUser* pAdmin, CUser* pObject, CString& sError) {
-			pObject->SetDefaultChanModes("");
-			return true;
-		}
-	},
-#ifdef HAVE_ICU
-	{
-		"ClientEncoding", StringType,
-		"The default client encoding.",
-		[](const CUser* pObject) {
-			return pObject->GetClientEncoding();
+		{
+			"Skin", StringType,
+			"The default web interface skin.",
+			[](const CZNC* pZNC) {
+				return pZNC->GetSkinName();
+			},
+			[](CUser* pAdmin, CZNC* pZNC, const CString& sVal, CString& sError) {
+				pZNC->SetSkinName(sVal);
+				return true;
+			},
+			[](CUser* pAdmin, CZNC* pZNC, CString& sError) {
+				pZNC->SetSkinName("");
+				return true;
+			}
 		},
-		[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
-			pObject->SetClientEncoding(sVal);
-			return true;
+		{
+			"SSLCertFile", StringType,
+			"The TLS/SSL certificate file from which ZNC reads its server certificate.",
+			[](const CZNC* pZNC) {
+				return pZNC->GetSSLCertFile();
+			},
+			[](CUser* pAdmin, CZNC* pZNC, const CString& sVal, CString& sError) {
+				pZNC->SetSSLCertFile(sVal);
+				return true;
+			},
+			[](CUser* pAdmin, CZNC* pZNC, CString& sError) {
+				pZNC->SetSSLCertFile(pZNC->GetZNCPath() + "/znc.pem");
+				return true;
+			},
 		},
-		[](CUser* pAdmin, CUser* pObject, CString& sError) {
-			pObject->SetClientEncoding("");
-			return true;
-		}
-	},
-#endif
-	{
-		"CTCPReply", ListType,
-		"A list of CTCP request-reply-pairs. Syntax: <request> <reply>.",
-		[](const CUser* pObject) {
-			VCString vsReplies;
-			for (const auto& it : pObject->GetCTCPReplies())
-				vsReplies.push_back(it.first + " " + it.second);
-			return CString("\n").Join(vsReplies.begin(), vsReplies.end());
+		{
+			"SSLCiphers", StringType,
+			"The allowed SSL ciphers. Default value is from Mozilla's recomendations.",
+			[](const CZNC* pZNC) {
+				return pZNC->GetSSLCiphers();
+			},
+			[](CUser* pAdmin, CZNC* pZNC, const CString& sVal, CString& sError) {
+				pZNC->SetSSLCiphers(sVal);
+				return true;
+			},
+			[](CUser* pAdmin, CZNC* pZNC, CString& sError) {
+				pZNC->SetSSLCiphers("");
+				return true;
+			},
 		},
-		[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
-			CString sRequest = sVal.Token(0);
-			CString sReply = sVal.Token(1, true);
-			if (sReply.empty()) {
-				if (!pObject->DelCTCPReply(sRequest.AsUpper())) {
-					sError = "unable to remove";
+		{
+			"SSLProtocols", StringType,
+			"The accepted SSL protocols. Available protocols are All, SSLv2, SSLv3, TLSv1, TLSv1.1 and TLSv1.2.",
+			[](const CZNC* pZNC) {
+				return pZNC->GetSSLProtocols();
+			},
+			[](CUser* pAdmin, CZNC* pZNC, const CString& sVal, CString& sError) {
+				if (!pZNC->SetSSLProtocols(sVal)) {
+					sError = "unknown protocol";
 					return false;
 				}
-			} else {
-				if (!pObject->AddCTCPReply(sRequest, sReply)) {
-					sError = "unable to add";
+				return true;
+			},
+			[](CUser* pAdmin, CZNC* pZNC, CString& sError) {
+				pZNC->SetSSLProtocols("");
+				return true;
+			},
+		},
+		{
+			"StatusPrefix", StringType,
+			"The default prefix for status and module queries.",
+			[](const CZNC* pZNC) {
+				return pZNC->GetSkinName();
+			},
+			[](CUser* pAdmin, CZNC* pZNC, const CString& sVal, CString& sError) {
+				pZNC->SetSkinName(sVal);
+				return true;
+			},
+			[](CUser* pAdmin, CZNC* pZNC, CString& sError) {
+				pZNC->SetStatusPrefix("");
+				return true;
+			}
+		},
+		{
+			"TrustedProxy", ListType,
+			"The list of trusted proxies.",
+			[](const CZNC* pZNC) {
+				const VCString& vsProxies = pZNC->GetTrustedProxies();
+				return CString("\n").Join(vsProxies.begin(), vsProxies.end());
+			},
+			[](CUser* pAdmin, CZNC* pZNC, const CString& sVal, CString& sError) {
+				SCString ssProxies;
+				sVal.Split(" ", ssProxies, false);
+				for (const CString& sProxy : ssProxies)
+					pZNC->AddTrustedProxy(sProxy);
+				return true;
+			},
+			[](CUser* pAdmin, CZNC* pZNC, CString& sError) {
+				pZNC->ClearTrustedProxies();
+				return true;
+			}
+		},
+	};
+
+	const std::vector<Variable<CUser>> UserVars = {
+		{
+			"Admin", BoolType,
+			"Whether the user has admin rights.",
+			[](const CUser* pObject) {
+				return CString(pObject->IsAdmin());
+			},
+			[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
+				pObject->SetAdmin(sVal.ToBool());
+				return true;
+			},
+			[](CUser* pAdmin, CUser* pObject, CString& sError) {
+				pObject->SetAdmin(false);
+				return true;
+			}
+		},
+		{
+			"AdminInfix", StringType,
+			"An infix (after the status prefix) for admin queries.",
+			[](const CUser* pObject) {
+				CAdminMod* pMod = dynamic_cast<CAdminMod*>(pObject->GetModules().FindModule("admin"));
+				return pMod ? pMod->GetInfix() : "";
+			},
+			[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
+				CAdminMod* pMod = dynamic_cast<CAdminMod*>(pObject->GetModules().FindModule("admin"));
+				if (!pMod) {
+					sError = "unable to find the module instance";
 					return false;
 				}
+				pMod->SetInfix(sVal);
+				return true;
+			},
+			[](CUser* pAdmin, CUser* pObject, CString& sError) {
+				CAdminMod* pMod = dynamic_cast<CAdminMod*>(pObject->GetModules().FindModule("admin"));
+				if (!pMod) {
+					sError = "unable to find the module instance";
+					return false;
+				}
+				pMod->SetInfix(pAdmin->GetStatusPrefix());
+				return true;
 			}
-			return true;
 		},
-		[](CUser* pAdmin, CUser* pObject, CString& sError) {
-			MCString mReplies = pObject->GetCTCPReplies();
-			for (const auto& it : mReplies)
-				pObject->DelCTCPReply(it.first);
-			return true;
-		}
-	},
-	{
-		"DCCBindHost", StringType,
-		"An optional bindhost for DCC connections.",
-		[](const CUser* pObject) {
-			return pObject->GetDCCBindHost();
-		},
-		[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
-			if (!pAdmin->IsAdmin() && pAdmin->DenySetBindHost()) {
-				sError = "access denied";
-				return false;
+		{
+			"Allow", ListType,
+			"The list of allowed IPs for the user. Wildcards (*) are supported.",
+			[](const CUser* pObject) {
+				const SCString& ssHosts = pObject->GetAllowedHosts();
+				return CString("\n").Join(ssHosts.begin(), ssHosts.end());
+			},
+			[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
+				SCString ssHosts;
+				sVal.Split(" ", ssHosts, false);
+				for (const CString& sHost : ssHosts)
+					pObject->AddAllowedHost(sHost);
+				return true;
+			},
+			[](CUser* pAdmin, CUser* pObject, CString& sError) {
+				pObject->ClearAllowedHosts();
+				return true;
 			}
-			pObject->SetDCCBindHost(sVal);
-			return true;
 		},
-		[](CUser* pAdmin, CUser* pObject, CString& sError) {
-			pObject->SetDCCBindHost("");
-			return true;
-		}
-	},
-	{
-		"DenyLoadMod", BoolType,
-		"Whether the user is denied access to load modules.",
-		[](const CUser* pObject) {
-			return CString(pObject->DenyLoadMod());
-		},
-		[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
-			if (!pAdmin->IsAdmin()) {
-				sError = "access denied";
-				return false;
+		{
+			"AltNick", StringType,
+			"The default alternate nick.",
+			[](const CUser* pObject) {
+				return pObject->GetAltNick();
+			},
+			[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
+				pObject->SetAltNick(sVal);
+				return true;
+			},
+			[](CUser* pAdmin, CUser* pObject, CString& sError) {
+				pObject->SetAltNick("");
+				return true;
 			}
-			pObject->SetDenyLoadMod(sVal.ToBool());
-			return true;
 		},
-		[](CUser* pAdmin, CUser* pObject, CString& sError) {
-			if (!pAdmin->IsAdmin()) {
-				sError = "access denied";
-				return false;
+		{
+			"AppendTimestamp", BoolType,
+			"Whether timestamps are appended to buffer playback messages.",
+			[](const CUser* pObject) {
+				return CString(pObject->GetTimestampAppend());
+			},
+			[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
+				pObject->SetTimestampAppend(sVal.ToBool());
+				return true;
+			},
+			[](CUser* pAdmin, CUser* pObject, CString& sError) {
+				pObject->SetTimestampAppend(false);
+				return true;
 			}
-			pObject->SetDenyLoadMod(false);
-			return true;
-		}
-	},
-	{
-		"DenySetBindHost", BoolType,
-		"Whether the user is denied access to set a bind host.",
-		[](const CUser* pObject) {
-			return CString(pObject->DenySetBindHost());
 		},
-		[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
-			if (!pAdmin->IsAdmin()) {
-				sError = "access denied";
-				return false;
+		{
+			"AutoClearChanBuffer", BoolType,
+			"Whether channel buffers are automatically cleared after playback.",
+			[](const CUser* pObject) {
+				return CString(pObject->AutoClearChanBuffer());
+			},
+			[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
+				pObject->SetAutoClearChanBuffer(sVal.ToBool());
+				return true;
+			},
+			[](CUser* pAdmin, CUser* pObject, CString& sError) {
+				pObject->SetAutoClearChanBuffer(true);
+				return true;
 			}
-			pObject->SetDenySetBindHost(sVal.ToBool());
-			return true;
 		},
-		[](CUser* pAdmin, CUser* pObject, CString& sError) {
-			if (!pAdmin->IsAdmin()) {
-				sError = "access denied";
-				return false;
+		{
+			"AutoClearQueryBuffer", BoolType,
+			"Whether query buffers are automatically cleared after playback.",
+			[](const CUser* pObject) {
+				return CString(pObject->AutoClearQueryBuffer());
+			},
+			[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
+				pObject->SetAutoClearQueryBuffer(sVal.ToBool());
+				return true;
+			},
+			[](CUser* pAdmin, CUser* pObject, CString& sError) {
+				pObject->SetAutoClearQueryBuffer(true);
+				return true;
 			}
-			pObject->SetDenySetBindHost(false);
-			return true;
-		}
-	},
-	{
-		"Ident", StringType,
-		"The default ident.",
-		[](const CUser* pObject) {
-			return pObject->GetIdent();
 		},
-		[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
-			pObject->SetIdent(sVal);
-			return true;
-		},
-		nullptr
-	},
-	{
-		"JoinTries", IntType,
-		"The amount of times channels are attempted to join in case of a failure.",
-		[](const CUser* pObject) {
-			return CString(pObject->JoinTries());
-		},
-		[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
-			pObject->SetJoinTries(sVal.ToUInt());
-			return true;
-		},
-		[](CUser* pAdmin, CUser* pObject, CString& sError) {
-			pObject->SetJoinTries(10);
-			return true;
-		}
-	},
-	{
-		"MaxJoins", IntType,
-		"The maximum number of channels ZNC joins at once.",
-		[](const CUser* pObject) {
-			return CString(pObject->MaxJoins());
-		},
-		[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
-			pObject->SetMaxJoins(sVal.ToUInt());
-			return true;
-		},
-		[](CUser* pAdmin, CUser* pObject, CString& sError) {
-			pObject->SetMaxJoins(0);
-			return true;
-		}
-	},
-	{
-		"MaxNetworks", IntType,
-		"The maximum number of networks the user is allowed to have.",
-		[](const CUser* pObject) {
-			return CString(pObject->MaxNetworks());
-		},
-		[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
-			if (!pAdmin->IsAdmin()) {
-				sError = "access denied";
-				return false;
+		{
+			"BindHost", StringType,
+			"The default bind host.",
+			[](const CUser* pObject) {
+				return pObject->GetBindHost();
+			},
+			[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
+				if (!pAdmin->IsAdmin() && pAdmin->DenySetBindHost()) {
+					sError = "access denied";
+					return false;
+				}
+				pObject->SetBindHost(sVal);
+				return true;
+			},
+			[](CUser* pAdmin, CUser* pObject, CString& sError) {
+				pObject->SetBindHost("");
+				return true;
 			}
-			pObject->SetMaxNetworks(sVal.ToUInt());
-			return true;
 		},
-		[](CUser* pAdmin, CUser* pObject, CString& sError) {
-			if (!pAdmin->IsAdmin()) {
-				sError = "access denied";
-				return false;
+		{
+			"ChanBufferSize", IntType,
+			"The maximum amount of lines stored for each channel playback buffer.",
+			[](const CUser* pObject) {
+				return CString(pObject->GetChanBufferSize());
+			},
+			[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
+				if (!pObject->SetChanBufferSize(sVal.ToUInt(), pAdmin->IsAdmin())) {
+					sError = "exceeded limit " + CString(CZNC::Get().GetMaxBufferSize());
+					return false;
+				}
+				return true;
+			},
+			[](CUser* pAdmin, CUser* pObject, CString& sError) {
+				pObject->SetChanBufferSize(50);
+				return true;
+			},
+		},
+		{
+			"ChanModes", StringType,
+			"The default modes ZNC sets when joining an empty channel.",
+			[](const CUser* pObject) {
+				return pObject->GetDefaultChanModes();
+			},
+			[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
+				pObject->SetDefaultChanModes(sVal);
+				return true;
+			},
+			[](CUser* pAdmin, CUser* pObject, CString& sError) {
+				pObject->SetDefaultChanModes("");
+				return true;
 			}
-			pObject->SetMaxNetworks(1);
-			return true;
-		}
-	},
-	{
-		"MaxQueryBuffers", IntType,
-		"The maximum number of query buffers that are stored.",
-		[](const CUser* pObject) {
-			return CString(pObject->MaxQueryBuffers());
 		},
-		[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
-			pObject->SetMaxQueryBuffers(sVal.ToUInt());
-			return true;
-		},
-		[](CUser* pAdmin, CUser* pObject, CString& sError) {
-			pObject->SetMaxQueryBuffers(50);
-			return true;
-		}
-	},
-	{
-		"MultiClients", BoolType,
-		"Whether multiple clients are allowed to connect simultaneously.",
-		[](const CUser* pObject) {
-			return CString(pObject->MultiClients());
-		},
-		[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
-			pObject->SetMultiClients(sVal.ToBool());
-			return true;
-		},
-		[](CUser* pAdmin, CUser* pObject, CString& sError) {
-			pObject->SetMultiClients(true);
-			return true;
-		}
-	},
-	{
-		"Nick", StringType,
-		"The default primary nick.",
-		[](const CUser* pObject) {
-			return pObject->GetNick();
-		},
-		[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
-			pObject->SetNick(sVal);
-			return true;
-		},
-		[](CUser* pAdmin, CUser* pObject, CString& sError) {
-			pObject->SetNick("");
-			return true;
-		}
-	},
-	{
-		"PrependTimestamp", BoolType,
-		"Whether timestamps are prepended to buffer playback messages.",
-		[](const CUser* pObject) {
-			return CString(pObject->GetTimestampPrepend());
-		},
-		[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
-			pObject->SetTimestampPrepend(sVal.ToBool());
-			return true;
-		},
-		[](CUser* pAdmin, CUser* pObject, CString& sError) {
-			pObject->SetTimestampPrepend(true);
-			return true;
-		}
-	},
-	{
-		"Password", StringType,
-		"",
-		[](const CUser* pObject) {
-			return CString(".", pObject->GetPass().size());
-		},
-		[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
-			const CString sSalt = CUtils::GetSalt();
-			const CString sHash = CUser::SaltedHash(sVal, sSalt);
-			pObject->SetPass(sHash, CUser::HASH_DEFAULT, sSalt);
-			return true;
-		},
-		nullptr
-	},
-	{
-		"QueryBufferSize", IntType,
-		"The maximum amount of lines stored for each query playback buffer.",
-		[](const CUser* pObject) {
-			return CString(pObject->GetQueryBufferSize());
-		},
-		[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
-			if (!pObject->SetQueryBufferSize(sVal.ToUInt(), pAdmin->IsAdmin())) {
-				sError = "exceeded limit " + CString(CZNC::Get().GetMaxBufferSize());
-				return false;
+	#ifdef HAVE_ICU
+		{
+			"ClientEncoding", StringType,
+			"The default client encoding.",
+			[](const CUser* pObject) {
+				return pObject->GetClientEncoding();
+			},
+			[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
+				pObject->SetClientEncoding(sVal);
+				return true;
+			},
+			[](CUser* pAdmin, CUser* pObject, CString& sError) {
+				pObject->SetClientEncoding("");
+				return true;
 			}
-			return true;
 		},
-		[](CUser* pAdmin, CUser* pObject, CString& sError) {
-			pObject->SetQueryBufferSize(50);
-			return true;
-		}
-	},
-	{
-		"QuitMsg", StringType,
-		"The default quit message ZNC uses when disconnecting or shutting down.",
-		[](const CUser* pObject) {
-			return pObject->GetQuitMsg();
+	#endif
+		{
+			"CTCPReply", ListType,
+			"A list of CTCP request-reply-pairs. Syntax: <request> <reply>.",
+			[](const CUser* pObject) {
+				VCString vsReplies;
+				for (const auto& it : pObject->GetCTCPReplies())
+					vsReplies.push_back(it.first + " " + it.second);
+				return CString("\n").Join(vsReplies.begin(), vsReplies.end());
+			},
+			[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
+				CString sRequest = sVal.Token(0);
+				CString sReply = sVal.Token(1, true);
+				if (sReply.empty()) {
+					if (!pObject->DelCTCPReply(sRequest.AsUpper())) {
+						sError = "unable to remove";
+						return false;
+					}
+				} else {
+					if (!pObject->AddCTCPReply(sRequest, sReply)) {
+						sError = "unable to add";
+						return false;
+					}
+				}
+				return true;
+			},
+			[](CUser* pAdmin, CUser* pObject, CString& sError) {
+				MCString mReplies = pObject->GetCTCPReplies();
+				for (const auto& it : mReplies)
+					pObject->DelCTCPReply(it.first);
+				return true;
+			}
 		},
-		[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
-			pObject->SetQuitMsg(sVal);
-			return true;
+		{
+			"DCCBindHost", StringType,
+			"An optional bindhost for DCC connections.",
+			[](const CUser* pObject) {
+				return pObject->GetDCCBindHost();
+			},
+			[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
+				if (!pAdmin->IsAdmin() && pAdmin->DenySetBindHost()) {
+					sError = "access denied";
+					return false;
+				}
+				pObject->SetDCCBindHost(sVal);
+				return true;
+			},
+			[](CUser* pAdmin, CUser* pObject, CString& sError) {
+				pObject->SetDCCBindHost("");
+				return true;
+			}
 		},
-		[](CUser* pAdmin, CUser* pObject, CString& sError) {
-			pObject->SetQuitMsg("");
-			return true;
-		}
-	},
-	{
-		"RealName", StringType,
-		"The default real name.",
-		[](const CUser* pObject) {
-			return pObject->GetRealName();
+		{
+			"DenyLoadMod", BoolType,
+			"Whether the user is denied access to load modules.",
+			[](const CUser* pObject) {
+				return CString(pObject->DenyLoadMod());
+			},
+			[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
+				if (!pAdmin->IsAdmin()) {
+					sError = "access denied";
+					return false;
+				}
+				pObject->SetDenyLoadMod(sVal.ToBool());
+				return true;
+			},
+			[](CUser* pAdmin, CUser* pObject, CString& sError) {
+				if (!pAdmin->IsAdmin()) {
+					sError = "access denied";
+					return false;
+				}
+				pObject->SetDenyLoadMod(false);
+				return true;
+			}
 		},
-		[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
-			pObject->SetRealName(sVal);
-			return true;
+		{
+			"DenySetBindHost", BoolType,
+			"Whether the user is denied access to set a bind host.",
+			[](const CUser* pObject) {
+				return CString(pObject->DenySetBindHost());
+			},
+			[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
+				if (!pAdmin->IsAdmin()) {
+					sError = "access denied";
+					return false;
+				}
+				pObject->SetDenySetBindHost(sVal.ToBool());
+				return true;
+			},
+			[](CUser* pAdmin, CUser* pObject, CString& sError) {
+				if (!pAdmin->IsAdmin()) {
+					sError = "access denied";
+					return false;
+				}
+				pObject->SetDenySetBindHost(false);
+				return true;
+			}
 		},
-		[](CUser* pAdmin, CUser* pObject, CString& sError) {
-			pObject->SetRealName("");
-			return true;
-		}
-	},
-	{
-		"Skin", StringType,
-		"The web interface skin.",
-		[](const CUser* pObject) {
-			return pObject->GetSkinName();
+		{
+			"Ident", StringType,
+			"The default ident.",
+			[](const CUser* pObject) {
+				return pObject->GetIdent();
+			},
+			[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
+				pObject->SetIdent(sVal);
+				return true;
+			},
+			nullptr
 		},
-		[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
-			pObject->SetSkinName(sVal);
-			return true;
+		{
+			"JoinTries", IntType,
+			"The amount of times channels are attempted to join in case of a failure.",
+			[](const CUser* pObject) {
+				return CString(pObject->JoinTries());
+			},
+			[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
+				pObject->SetJoinTries(sVal.ToUInt());
+				return true;
+			},
+			[](CUser* pAdmin, CUser* pObject, CString& sError) {
+				pObject->SetJoinTries(10);
+				return true;
+			}
 		},
-		[](CUser* pAdmin, CUser* pObject, CString& sError) {
-			pObject->SetSkinName("");
-			return true;
-		}
-	},
-	{
-		"StatusPrefix", StringType,
-		"The prefix for status and module queries.",
-		[](const CUser* pObject) {
-			return pObject->GetStatusPrefix();
+		{
+			"MaxJoins", IntType,
+			"The maximum number of channels ZNC joins at once.",
+			[](const CUser* pObject) {
+				return CString(pObject->MaxJoins());
+			},
+			[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
+				pObject->SetMaxJoins(sVal.ToUInt());
+				return true;
+			},
+			[](CUser* pAdmin, CUser* pObject, CString& sError) {
+				pObject->SetMaxJoins(0);
+				return true;
+			}
 		},
-		[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
-			pObject->SetStatusPrefix(sVal);
-			return true;
+		{
+			"MaxNetworks", IntType,
+			"The maximum number of networks the user is allowed to have.",
+			[](const CUser* pObject) {
+				return CString(pObject->MaxNetworks());
+			},
+			[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
+				if (!pAdmin->IsAdmin()) {
+					sError = "access denied";
+					return false;
+				}
+				pObject->SetMaxNetworks(sVal.ToUInt());
+				return true;
+			},
+			[](CUser* pAdmin, CUser* pObject, CString& sError) {
+				if (!pAdmin->IsAdmin()) {
+					sError = "access denied";
+					return false;
+				}
+				pObject->SetMaxNetworks(1);
+				return true;
+			}
 		},
-		[](CUser* pAdmin, CUser* pObject, CString& sError) {
-			pObject->SetStatusPrefix("*");
-			return true;
-		}
-	},
-	{
-		"TimestampFormat", StringType,
-		"The format of the timestamps used in buffer playback messages.",
-		[](const CUser* pObject) {
-			return pObject->GetTimestampFormat();
+		{
+			"MaxQueryBuffers", IntType,
+			"The maximum number of query buffers that are stored.",
+			[](const CUser* pObject) {
+				return CString(pObject->MaxQueryBuffers());
+			},
+			[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
+				pObject->SetMaxQueryBuffers(sVal.ToUInt());
+				return true;
+			},
+			[](CUser* pAdmin, CUser* pObject, CString& sError) {
+				pObject->SetMaxQueryBuffers(50);
+				return true;
+			}
 		},
-		[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
-			pObject->SetTimestampFormat(sVal);
-			return true;
+		{
+			"MultiClients", BoolType,
+			"Whether multiple clients are allowed to connect simultaneously.",
+			[](const CUser* pObject) {
+				return CString(pObject->MultiClients());
+			},
+			[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
+				pObject->SetMultiClients(sVal.ToBool());
+				return true;
+			},
+			[](CUser* pAdmin, CUser* pObject, CString& sError) {
+				pObject->SetMultiClients(true);
+				return true;
+			}
 		},
-		[](CUser* pAdmin, CUser* pObject, CString& sError) {
-			pObject->SetTimestampFormat("[%H:%M:%S]");
-			return true;
-		}
-	},
-	{
-		"Timezone", StringType,
-		"The timezone used for timestamps in buffer playback messages.",
-		[](const CUser* pObject) {
-			return pObject->GetTimezone();
+		{
+			"Nick", StringType,
+			"The default primary nick.",
+			[](const CUser* pObject) {
+				return pObject->GetNick();
+			},
+			[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
+				pObject->SetNick(sVal);
+				return true;
+			},
+			[](CUser* pAdmin, CUser* pObject, CString& sError) {
+				pObject->SetNick("");
+				return true;
+			}
 		},
-		[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
-			pObject->SetTimezone(sVal);
-			return true;
+		{
+			"PrependTimestamp", BoolType,
+			"Whether timestamps are prepended to buffer playback messages.",
+			[](const CUser* pObject) {
+				return CString(pObject->GetTimestampPrepend());
+			},
+			[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
+				pObject->SetTimestampPrepend(sVal.ToBool());
+				return true;
+			},
+			[](CUser* pAdmin, CUser* pObject, CString& sError) {
+				pObject->SetTimestampPrepend(true);
+				return true;
+			}
 		},
-		[](CUser* pAdmin, CUser* pObject, CString& sError) {
-			pObject->SetTimezone("");
-			return true;
-		}
-	},
-};
+		{
+			"Password", StringType,
+			"",
+			[](const CUser* pObject) {
+				return CString(".", pObject->GetPass().size());
+			},
+			[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
+				const CString sSalt = CUtils::GetSalt();
+				const CString sHash = CUser::SaltedHash(sVal, sSalt);
+				pObject->SetPass(sHash, CUser::HASH_DEFAULT, sSalt);
+				return true;
+			},
+			nullptr
+		},
+		{
+			"QueryBufferSize", IntType,
+			"The maximum amount of lines stored for each query playback buffer.",
+			[](const CUser* pObject) {
+				return CString(pObject->GetQueryBufferSize());
+			},
+			[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
+				if (!pObject->SetQueryBufferSize(sVal.ToUInt(), pAdmin->IsAdmin())) {
+					sError = "exceeded limit " + CString(CZNC::Get().GetMaxBufferSize());
+					return false;
+				}
+				return true;
+			},
+			[](CUser* pAdmin, CUser* pObject, CString& sError) {
+				pObject->SetQueryBufferSize(50);
+				return true;
+			}
+		},
+		{
+			"QuitMsg", StringType,
+			"The default quit message ZNC uses when disconnecting or shutting down.",
+			[](const CUser* pObject) {
+				return pObject->GetQuitMsg();
+			},
+			[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
+				pObject->SetQuitMsg(sVal);
+				return true;
+			},
+			[](CUser* pAdmin, CUser* pObject, CString& sError) {
+				pObject->SetQuitMsg("");
+				return true;
+			}
+		},
+		{
+			"RealName", StringType,
+			"The default real name.",
+			[](const CUser* pObject) {
+				return pObject->GetRealName();
+			},
+			[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
+				pObject->SetRealName(sVal);
+				return true;
+			},
+			[](CUser* pAdmin, CUser* pObject, CString& sError) {
+				pObject->SetRealName("");
+				return true;
+			}
+		},
+		{
+			"Skin", StringType,
+			"The web interface skin.",
+			[](const CUser* pObject) {
+				return pObject->GetSkinName();
+			},
+			[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
+				pObject->SetSkinName(sVal);
+				return true;
+			},
+			[](CUser* pAdmin, CUser* pObject, CString& sError) {
+				pObject->SetSkinName("");
+				return true;
+			}
+		},
+		{
+			"StatusPrefix", StringType,
+			"The prefix for status and module queries.",
+			[](const CUser* pObject) {
+				return pObject->GetStatusPrefix();
+			},
+			[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
+				pObject->SetStatusPrefix(sVal);
+				return true;
+			},
+			[](CUser* pAdmin, CUser* pObject, CString& sError) {
+				pObject->SetStatusPrefix("*");
+				return true;
+			}
+		},
+		{
+			"TimestampFormat", StringType,
+			"The format of the timestamps used in buffer playback messages.",
+			[](const CUser* pObject) {
+				return pObject->GetTimestampFormat();
+			},
+			[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
+				pObject->SetTimestampFormat(sVal);
+				return true;
+			},
+			[](CUser* pAdmin, CUser* pObject, CString& sError) {
+				pObject->SetTimestampFormat("[%H:%M:%S]");
+				return true;
+			}
+		},
+		{
+			"Timezone", StringType,
+			"The timezone used for timestamps in buffer playback messages.",
+			[](const CUser* pObject) {
+				return pObject->GetTimezone();
+			},
+			[](CUser* pAdmin, CUser* pObject, const CString& sVal, CString& sError) {
+				pObject->SetTimezone(sVal);
+				return true;
+			},
+			[](CUser* pAdmin, CUser* pObject, CString& sError) {
+				pObject->SetTimezone("");
+				return true;
+			}
+		},
+	};
 
-static const std::vector<Variable<CIRCNetwork>> NetworkVars = {
-	{
-		"AltNick", StringType,
-		"An optional network specific alternate nick used if the primary nick is reserved.",
-		[](const CIRCNetwork* pObject) {
-			return pObject->GetAltNick();
-		},
-		[](CUser* pAdmin, CIRCNetwork* pObject, const CString& sVal, CString& sError) {
-			pObject->SetAltNick(sVal);
-			return true;
-		},
-		[](CUser* pAdmin, CIRCNetwork* pObject, CString& sError) {
-			pObject->SetAltNick("");
-			return true;
-		}
-	},
-	{
-		"BindHost", StringType,
-		"An optional network specific bind host.",
-		[](const CIRCNetwork* pObject) {
-			return pObject->GetBindHost();
-		},
-		[](CUser* pAdmin, CIRCNetwork* pObject, const CString& sVal, CString& sError) {
-			if (!pAdmin->IsAdmin() && pAdmin->DenySetBindHost()) {
-				sError = "access denied";
-				return false;
+	const std::vector<Variable<CIRCNetwork>> NetworkVars = {
+		{
+			"AltNick", StringType,
+			"An optional network specific alternate nick used if the primary nick is reserved.",
+			[](const CIRCNetwork* pObject) {
+				return pObject->GetAltNick();
+			},
+			[](CUser* pAdmin, CIRCNetwork* pObject, const CString& sVal, CString& sError) {
+				pObject->SetAltNick(sVal);
+				return true;
+			},
+			[](CUser* pAdmin, CIRCNetwork* pObject, CString& sError) {
+				pObject->SetAltNick("");
+				return true;
 			}
-			pObject->SetBindHost(sVal);
-			return true;
 		},
-		[](CUser* pAdmin, CIRCNetwork* pObject, CString& sError) {
-			pObject->SetBindHost("");
-			return true;
-		}
-	},
-#ifdef HAVE_ICU
-	{
-		"Encoding", StringType,
-		"An optional network specific client encoding.",
-		[](const CIRCNetwork* pObject) {
-			return pObject->GetEncoding();
+		{
+			"BindHost", StringType,
+			"An optional network specific bind host.",
+			[](const CIRCNetwork* pObject) {
+				return pObject->GetBindHost();
+			},
+			[](CUser* pAdmin, CIRCNetwork* pObject, const CString& sVal, CString& sError) {
+				if (!pAdmin->IsAdmin() && pAdmin->DenySetBindHost()) {
+					sError = "access denied";
+					return false;
+				}
+				pObject->SetBindHost(sVal);
+				return true;
+			},
+			[](CUser* pAdmin, CIRCNetwork* pObject, CString& sError) {
+				pObject->SetBindHost("");
+				return true;
+			}
 		},
-		[](CUser* pAdmin, CIRCNetwork* pObject, const CString& sVal, CString& sError) {
-			pObject->SetEncoding(sVal);
-			return true;
+	#ifdef HAVE_ICU
+		{
+			"Encoding", StringType,
+			"An optional network specific client encoding.",
+			[](const CIRCNetwork* pObject) {
+				return pObject->GetEncoding();
+			},
+			[](CUser* pAdmin, CIRCNetwork* pObject, const CString& sVal, CString& sError) {
+				pObject->SetEncoding(sVal);
+				return true;
+			},
+			[](CUser* pAdmin, CIRCNetwork* pObject, CString& sError) {
+				pObject->SetEncoding("");
+				return true;
+			}
 		},
-		[](CUser* pAdmin, CIRCNetwork* pObject, CString& sError) {
-			pObject->SetEncoding("");
-			return true;
-		}
-	},
-#endif
-	{
-		"FloodBurst", IntType,
-		"The maximum amount of lines ZNC sends at once.",
-		[](const CIRCNetwork* pObject) {
-			return CString(pObject->GetFloodBurst());
+	#endif
+		{
+			"FloodBurst", IntType,
+			"The maximum amount of lines ZNC sends at once.",
+			[](const CIRCNetwork* pObject) {
+				return CString(pObject->GetFloodBurst());
+			},
+			[](CUser* pAdmin, CIRCNetwork* pObject, const CString& sVal, CString& sError) {
+				pObject->SetFloodBurst(sVal.ToUShort());
+				return true;
+			},
+			[](CUser* pAdmin, CIRCNetwork* pObject, CString& sError) {
+				pObject->SetFloodBurst(4);
+				return true;
+			}
 		},
-		[](CUser* pAdmin, CIRCNetwork* pObject, const CString& sVal, CString& sError) {
-			pObject->SetFloodBurst(sVal.ToUShort());
-			return true;
+		{
+			"FloodRate", DoubleType,
+			"The number of lines per second ZNC sends after reaching the FloodBurst limit.",
+			[](const CIRCNetwork* pObject) {
+				return CString(pObject->GetFloodRate());
+			},
+			[](CUser* pAdmin, CIRCNetwork* pObject, const CString& sVal, CString& sError) {
+				pObject->SetFloodRate(sVal.ToDouble());
+				return true;
+			},
+			[](CUser* pAdmin, CIRCNetwork* pObject, CString& sError) {
+				pObject->SetFloodRate(1);
+				return true;
+			}
 		},
-		[](CUser* pAdmin, CIRCNetwork* pObject, CString& sError) {
-			pObject->SetFloodBurst(4);
-			return true;
-		}
-	},
-	{
-		"FloodRate", DoubleType,
-		"The number of lines per second ZNC sends after reaching the FloodBurst limit.",
-		[](const CIRCNetwork* pObject) {
-			return CString(pObject->GetFloodRate());
+		{
+			"Ident", StringType,
+			"An optional network specific ident.",
+			[](const CIRCNetwork* pObject) {
+				return pObject->GetIdent();
+			},
+			[](CUser* pAdmin, CIRCNetwork* pObject, const CString& sVal, CString& sError) {
+				pObject->SetIdent(sVal);
+				return true;
+			},
+			[](CUser* pAdmin, CIRCNetwork* pObject, CString& sError) {
+				pObject->SetIdent("");
+				return true;
+			}
 		},
-		[](CUser* pAdmin, CIRCNetwork* pObject, const CString& sVal, CString& sError) {
-			pObject->SetFloodRate(sVal.ToDouble());
-			return true;
+		// TODO: IRCConnectEnabled?
+		{
+			"JoinDelay", IntType,
+			"The delay in seconds, until channels are joined after getting connected.",
+			[](const CIRCNetwork* pObject) {
+				return CString(pObject->GetJoinDelay());
+			},
+			[](CUser* pAdmin, CIRCNetwork* pObject, const CString& sVal, CString& sError) {
+				pObject->SetJoinDelay(sVal.ToUShort());
+				return true;
+			},
+			[](CUser* pAdmin, CIRCNetwork* pObject, CString& sError) {
+				pObject->SetJoinDelay(0);
+				return true;
+			}
 		},
-		[](CUser* pAdmin, CIRCNetwork* pObject, CString& sError) {
-			pObject->SetFloodRate(1);
-			return true;
-		}
-	},
-	{
-		"Ident", StringType,
-		"An optional network specific ident.",
-		[](const CIRCNetwork* pObject) {
-			return pObject->GetIdent();
+		{
+			"Nick", StringType,
+			"An optional network specific primary nick.",
+			[](const CIRCNetwork* pObject) {
+				return pObject->GetNick();
+			},
+			[](CUser* pAdmin, CIRCNetwork* pObject, const CString& sVal, CString& sError) {
+				pObject->SetNick(sVal);
+				return true;
+			},
+			[](CUser* pAdmin, CIRCNetwork* pObject, CString& sError) {
+				pObject->SetNick("");
+				return true;
+			}
 		},
-		[](CUser* pAdmin, CIRCNetwork* pObject, const CString& sVal, CString& sError) {
-			pObject->SetIdent(sVal);
-			return true;
+		{
+			"QuitMsg", StringType,
+			"An optional network specific quit message ZNC uses when disconnecting or shutting down.",
+			[](const CIRCNetwork* pObject) {
+				return pObject->GetQuitMsg();
+			},
+			[](CUser* pAdmin, CIRCNetwork* pObject, const CString& sVal, CString& sError) {
+				pObject->SetQuitMsg(sVal);
+				return true;
+			},
+			[](CUser* pAdmin, CIRCNetwork* pObject, CString& sError) {
+				pObject->SetQuitMsg("");
+				return true;
+			}
 		},
-		[](CUser* pAdmin, CIRCNetwork* pObject, CString& sError) {
-			pObject->SetIdent("");
-			return true;
-		}
-	},
-	// TODO: IRCConnectEnabled?
-	{
-		"JoinDelay", IntType,
-		"The delay in seconds, until channels are joined after getting connected.",
-		[](const CIRCNetwork* pObject) {
-			return CString(pObject->GetJoinDelay());
+		{
+			"RealName", StringType,
+			"An optional network specific real name.",
+			[](const CIRCNetwork* pObject) {
+				return pObject->GetRealName();
+			},
+			[](CUser* pAdmin, CIRCNetwork* pObject, const CString& sVal, CString& sError) {
+				pObject->SetRealName(sVal);
+				return true;
+			},
+			[](CUser* pAdmin, CIRCNetwork* pObject, CString& sError) {
+				pObject->SetRealName("");
+				return true;
+			}
 		},
-		[](CUser* pAdmin, CIRCNetwork* pObject, const CString& sVal, CString& sError) {
-			pObject->SetJoinDelay(sVal.ToUShort());
-			return true;
+		{
+			"TrustedServerFingerprint", ListType,
+			"The list of trusted server fingerprints.",
+			[](const CIRCNetwork* pNetwork) {
+				const SCString& sFP = pNetwork->GetTrustedFingerprints();
+				return CString("\n").Join(sFP.begin(), sFP.end());
+			},
+			[](CUser* pAdmin, CIRCNetwork* pNetwork, const CString& sVal, CString& sError) {
+				pNetwork->AddTrustedFingerprint(sVal);
+				return true;
+			},
+			[](CUser* pAdmin, CIRCNetwork* pNetwork, CString& sError) {
+				pNetwork->ClearTrustedFingerprints();
+				return true;
+			}
 		},
-		[](CUser* pAdmin, CIRCNetwork* pObject, CString& sError) {
-			pObject->SetJoinDelay(0);
-			return true;
-		}
-	},
-	{
-		"Nick", StringType,
-		"An optional network specific primary nick.",
-		[](const CIRCNetwork* pObject) {
-			return pObject->GetNick();
-		},
-		[](CUser* pAdmin, CIRCNetwork* pObject, const CString& sVal, CString& sError) {
-			pObject->SetNick(sVal);
-			return true;
-		},
-		[](CUser* pAdmin, CIRCNetwork* pObject, CString& sError) {
-			pObject->SetNick("");
-			return true;
-		}
-	},
-	{
-		"QuitMsg", StringType,
-		"An optional network specific quit message ZNC uses when disconnecting or shutting down.",
-		[](const CIRCNetwork* pObject) {
-			return pObject->GetQuitMsg();
-		},
-		[](CUser* pAdmin, CIRCNetwork* pObject, const CString& sVal, CString& sError) {
-			pObject->SetQuitMsg(sVal);
-			return true;
-		},
-		[](CUser* pAdmin, CIRCNetwork* pObject, CString& sError) {
-			pObject->SetQuitMsg("");
-			return true;
-		}
-	},
-	{
-		"RealName", StringType,
-		"An optional network specific real name.",
-		[](const CIRCNetwork* pObject) {
-			return pObject->GetRealName();
-		},
-		[](CUser* pAdmin, CIRCNetwork* pObject, const CString& sVal, CString& sError) {
-			pObject->SetRealName(sVal);
-			return true;
-		},
-		[](CUser* pAdmin, CIRCNetwork* pObject, CString& sError) {
-			pObject->SetRealName("");
-			return true;
-		}
-	},
-	{
-		"TrustedServerFingerprint", ListType,
-		"The list of trusted server fingerprints.",
-		[](const CIRCNetwork* pNetwork) {
-			const SCString& sFP = pNetwork->GetTrustedFingerprints();
-			return CString("\n").Join(sFP.begin(), sFP.end());
-		},
-		[](CUser* pAdmin, CIRCNetwork* pNetwork, const CString& sVal, CString& sError) {
-			pNetwork->AddTrustedFingerprint(sVal);
-			return true;
-		},
-		[](CUser* pAdmin, CIRCNetwork* pNetwork, CString& sError) {
-			pNetwork->ClearTrustedFingerprints();
-			return true;
-		}
-	},
-};
+	};
 
-static const std::vector<Variable<CChan>> ChanVars = {
-	{
-		"AutoClearChanBuffer", BoolType,
-		"Whether the channel buffer is automatically cleared after playback.",
-		[](const CChan* pObject) {
-			CString sVal(pObject->AutoClearChanBuffer());
-			if (!pObject->HasAutoClearChanBufferSet())
-				sVal += " (default)";
-			return sVal;
-		},
-		[](CUser* pAdmin, CChan* pObject, const CString& sVal, CString& sError) {
-			pObject->SetAutoClearChanBuffer(sVal.ToBool());
-			return true;
-		},
-		[](CUser* pAdmin, CChan* pObject, CString& sError) {
-			pObject->ResetAutoClearChanBuffer();
-			return true;
-		}
-	},
-	{
-		"Buffer", IntType,
-		"The maximum amount of lines stored for the channel specific playback buffer.",
-		[](const CChan* pObject) {
-			CString sVal(pObject->GetBufferCount());
-			if (!pObject->HasBufferCountSet())
-				sVal += " (default)";
-			return sVal;
-		},
-		[](CUser* pAdmin, CChan* pObject, const CString& sVal, CString& sError) {
-			if (!pObject->SetBufferCount(sVal.ToUInt(), pAdmin->IsAdmin())) {
-				sError = "exceeded limit " + CString(CZNC::Get().GetMaxBufferSize());
-				return false;
+	const std::vector<Variable<CChan>> ChanVars = {
+		{
+			"AutoClearChanBuffer", BoolType,
+			"Whether the channel buffer is automatically cleared after playback.",
+			[](const CChan* pObject) {
+				CString sVal(pObject->AutoClearChanBuffer());
+				if (!pObject->HasAutoClearChanBufferSet())
+					sVal += " (default)";
+				return sVal;
+			},
+			[](CUser* pAdmin, CChan* pObject, const CString& sVal, CString& sError) {
+				pObject->SetAutoClearChanBuffer(sVal.ToBool());
+				return true;
+			},
+			[](CUser* pAdmin, CChan* pObject, CString& sError) {
+				pObject->ResetAutoClearChanBuffer();
+				return true;
 			}
-			return true;
 		},
-		[](CUser* pAdmin, CChan* pObject, CString& sError) {
-			pObject->ResetBufferCount();
-			return true;
-		}
-	},
-	{
-		"Detached", BoolType,
-		"Whether the channel is detached.",
-		[](const CChan* pObject) {
-			return CString(pObject->IsDetached());
+		{
+			"Buffer", IntType,
+			"The maximum amount of lines stored for the channel specific playback buffer.",
+			[](const CChan* pObject) {
+				CString sVal(pObject->GetBufferCount());
+				if (!pObject->HasBufferCountSet())
+					sVal += " (default)";
+				return sVal;
+			},
+			[](CUser* pAdmin, CChan* pObject, const CString& sVal, CString& sError) {
+				if (!pObject->SetBufferCount(sVal.ToUInt(), pAdmin->IsAdmin())) {
+					sError = "exceeded limit " + CString(CZNC::Get().GetMaxBufferSize());
+					return false;
+				}
+				return true;
+			},
+			[](CUser* pAdmin, CChan* pObject, CString& sError) {
+				pObject->ResetBufferCount();
+				return true;
+			}
 		},
-		[](CUser* pAdmin, CChan* pObject, const CString& sVal, CString& sError) {
-			bool b = sVal.ToBool();
-			if (b != pObject->IsDetached()) {
-				if (b)
-					pObject->DetachUser();
-				else
+		{
+			"Detached", BoolType,
+			"Whether the channel is detached.",
+			[](const CChan* pObject) {
+				return CString(pObject->IsDetached());
+			},
+			[](CUser* pAdmin, CChan* pObject, const CString& sVal, CString& sError) {
+				bool b = sVal.ToBool();
+				if (b != pObject->IsDetached()) {
+					if (b)
+						pObject->DetachUser();
+					else
+						pObject->AttachUser();
+				}
+				return true;
+			},
+			[](CUser* pAdmin, CChan* pObject, CString& sError) {
+				if (pObject->IsDetached())
 					pObject->AttachUser();
+				return true;
 			}
-			return true;
 		},
-		[](CUser* pAdmin, CChan* pObject, CString& sError) {
-			if (pObject->IsDetached())
-				pObject->AttachUser();
-			return true;
-		}
-	},
-	{
-		"Disabled", BoolType,
-		"Whether the channel is disabled.",
-		[](const CChan* pObject) {
-			return CString(pObject->IsDisabled());
-		},
-		[](CUser* pAdmin, CChan* pObject, const CString& sVal, CString& sError) {
-			bool b = sVal.ToBool();
-			if (b != pObject->IsDisabled()) {
-				if (b)
-					pObject->Disable();
-				else
+		{
+			"Disabled", BoolType,
+			"Whether the channel is disabled.",
+			[](const CChan* pObject) {
+				return CString(pObject->IsDisabled());
+			},
+			[](CUser* pAdmin, CChan* pObject, const CString& sVal, CString& sError) {
+				bool b = sVal.ToBool();
+				if (b != pObject->IsDisabled()) {
+					if (b)
+						pObject->Disable();
+					else
+						pObject->Enable();
+				}
+				return true;
+			},
+			[](CUser* pAdmin, CChan* pObject, CString& sError) {
+				if (pObject->IsDisabled())
 					pObject->Enable();
+				return true;
 			}
-			return true;
 		},
-		[](CUser* pAdmin, CChan* pObject, CString& sError) {
-			if (pObject->IsDisabled())
-				pObject->Enable();
-			return true;
-		}
-	},
-	{
-		"InConfig", BoolType,
-		"Whether the channel is stored in the config file.",
-		[](const CChan* pObject) {
-			return CString(pObject->InConfig());
+		{
+			"InConfig", BoolType,
+			"Whether the channel is stored in the config file.",
+			[](const CChan* pObject) {
+				return CString(pObject->InConfig());
+			},
+			[](CUser* pAdmin, CChan* pObject, const CString& sVal, CString& sError) {
+				pObject->SetInConfig(sVal.ToBool());
+				return true;
+			},
+			nullptr
 		},
-		[](CUser* pAdmin, CChan* pObject, const CString& sVal, CString& sError) {
-			pObject->SetInConfig(sVal.ToBool());
-			return true;
+		{
+			"Key", StringType,
+			"An optional channel key.",
+			[](const CChan* pObject) {
+				return pObject->GetKey();
+			},
+			[](CUser* pAdmin, CChan* pObject, const CString& sVal, CString& sError) {
+				pObject->SetKey(sVal);
+				return true;
+			},
+			[](CUser* pAdmin, CChan* pObject, CString& sError) {
+				pObject->SetKey("");
+				return true;
+			}
 		},
-		nullptr
-	},
-	{
-		"Key", StringType,
-		"An optional channel key.",
-		[](const CChan* pObject) {
-			return pObject->GetKey();
+		{
+			"Modes", StringType,
+			"An optional set of default channel modes ZNC sets when joining an empty channel.",
+			[](const CChan* pObject) {
+				return pObject->GetDefaultModes();
+			},
+			[](CUser* pAdmin, CChan* pObject, const CString& sVal, CString& sError) {
+				pObject->SetDefaultModes(sVal);
+				return true;
+			},
+			[](CUser* pAdmin, CChan* pObject, CString& sError) {
+				pObject->SetDefaultModes("");
+				return true;
+			}
 		},
-		[](CUser* pAdmin, CChan* pObject, const CString& sVal, CString& sError) {
-			pObject->SetKey(sVal);
-			return true;
+	};
+
+	const std::vector<Command<CZNC>> GlobalCmds = {
+		{
+			"AddUser <username> <password>",
+			"Adds a new user.",
+			[](CUser* pAdmin, CZNC* pObject, const CString& sArgs, CString& sError) {
+				if (!pAdmin->IsAdmin()) {
+					sError = "access denied";
+					return false;
+				}
+
+				const CString sUsername = sArgs.Token(0);
+				const CString sPassword = sArgs.Token(1);
+				if (sPassword.empty())
+					return false;
+
+				if (pObject->FindUser(sUsername)) {
+					sError = "already exists";
+					return false;
+				}
+
+				CUser* pUser = new CUser(sUsername);
+				CString sSalt = CUtils::GetSalt();
+				pUser->SetPass(CUser::SaltedHash(sPassword, sSalt), CUser::HASH_DEFAULT, sSalt);
+
+				if (!CZNC::Get().AddUser(pUser, sError)) {
+					delete pUser;
+					return false;
+				}
+
+				return true;
+			}
 		},
-		[](CUser* pAdmin, CChan* pObject, CString& sError) {
-			pObject->SetKey("");
-			return true;
-		}
-	},
-	{
-		"Modes", StringType,
-		"An optional set of default channel modes ZNC sets when joining an empty channel.",
-		[](const CChan* pObject) {
-			return pObject->GetDefaultModes();
+		{
+			"DelUser <username>",
+			"Deletes a user.",
+			[](CUser* pAdmin, CZNC* pObject, const CString& sArgs, CString& sError) {
+				if (!pAdmin->IsAdmin()) {
+					sError = "access denied";
+					return false;
+				}
+
+				const CString sUsername = sArgs.Token(0);
+				if (sUsername.empty())
+					return false;
+
+				CUser *pUser = CZNC::Get().FindUser(sUsername);
+				if (!pUser) {
+					sError = "doesn't exist";
+					return false;
+				}
+
+				if (pAdmin == pUser) {
+					sError = "access denied";
+					return false;
+				}
+
+				CZNC::Get().DeleteUser(pUser->GetUserName());
+				return true;
+			}
 		},
-		[](CUser* pAdmin, CChan* pObject, const CString& sVal, CString& sError) {
-			pObject->SetDefaultModes(sVal);
-			return true;
-		},
-		[](CUser* pAdmin, CChan* pObject, CString& sError) {
-			pObject->SetDefaultModes("");
-			return true;
-		}
-	},
+	};
+
+	const std::vector<Command<CUser>> UserCmds = {
+	};
+
+	const std::vector<Command<CIRCNetwork>> NetworkCmds = {
+	};
+
+	const std::vector<Command<CChan>> ChanCmds = {
+	};
 };
 
-static const std::vector<Command<CZNC>> GlobalCmds = {
-	{
-		"AddUser <username> <password>",
-		"Adds a new user.",
-		[](CUser* pAdmin, CZNC* pObject, const CString& sArgs, CString& sError) {
-			if (!pAdmin->IsAdmin()) {
-				sError = "access denied";
-				return false;
-			}
-
-			const CString sUsername = sArgs.Token(0);
-			const CString sPassword = sArgs.Token(1);
-			if (sPassword.empty())
-				return false;
-
-			if (pObject->FindUser(sUsername)) {
-				sError = "already exists";
-				return false;
-			}
-
-			CUser* pUser = new CUser(sUsername);
-			CString sSalt = CUtils::GetSalt();
-			pUser->SetPass(CUser::SaltedHash(sPassword, sSalt), CUser::HASH_DEFAULT, sSalt);
-
-			if (!CZNC::Get().AddUser(pUser, sError)) {
-				delete pUser;
-				return false;
-			}
-
-			return true;
-		}
-	},
-	{
-		"DelUser <username>",
-		"Deletes a user.",
-		[](CUser* pAdmin, CZNC* pObject, const CString& sArgs, CString& sError) {
-			if (!pAdmin->IsAdmin()) {
-				sError = "access denied";
-				return false;
-			}
-
-			const CString sUsername = sArgs.Token(0);
-			if (sUsername.empty())
-				return false;
-
-			CUser *pUser = CZNC::Get().FindUser(sUsername);
-			if (!pUser) {
-				sError = "doesn't exist";
-				return false;
-			}
-
-			if (pAdmin == pUser) {
-				sError = "access denied";
-				return false;
-			}
-
-			CZNC::Get().DeleteUser(pUser->GetUserName());
-			return true;
-		}
-	},
-};
-
-static const std::vector<Command<CUser>> UserCmds = {
-};
-
-static const std::vector<Command<CIRCNetwork>> NetworkCmds = {
-};
-
-static const std::vector<Command<CChan>> ChanCmds = {
-};
 
 CString CAdminMod::GetInfix() const
 {
