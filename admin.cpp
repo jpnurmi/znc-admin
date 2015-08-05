@@ -326,25 +326,14 @@ private:
 			"AdminInfix", StringType,
 			"An infix (after the status prefix) for admin queries.",
 			[=](const CUser* pObject) {
-				CAdminMod* pMod = dynamic_cast<CAdminMod*>(pObject->GetModules().FindModule("admin"));
-				return pMod ? pMod->GetInfix() : "";
+				return GetInfix();
 			},
 			[=](CUser* pObject, const CString& sVal, CString& sError) {
-				CAdminMod* pMod = dynamic_cast<CAdminMod*>(pObject->GetModules().FindModule("admin"));
-				if (!pMod) {
-					sError = "unable to find the module instance";
-					return false;
-				}
-				pMod->SetInfix(sVal);
+				SetInfix(sVal);
 				return true;
 			},
 			[=](CUser* pObject, CString& sError) {
-				CAdminMod* pMod = dynamic_cast<CAdminMod*>(pObject->GetModules().FindModule("admin"));
-				if (!pMod) {
-					sError = "unable to find the module instance";
-					return false;
-				}
-				pMod->SetInfix(GetUser()->GetStatusPrefix());
+				SetInfix(GetUser()->GetStatusPrefix());
 				return true;
 			}
 		},
