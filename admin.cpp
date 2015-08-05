@@ -311,29 +311,29 @@ private:
 		{
 			"Admin", BoolType,
 			"Whether the user has admin rights.",
-			[=](const CUser* pObject) {
-				return CString(pObject->IsAdmin());
+			[=](const CUser* pUser) {
+				return CString(pUser->IsAdmin());
 			},
-			[=](CUser* pObject, const CString& sVal) {
-				pObject->SetAdmin(sVal.ToBool());
+			[=](CUser* pUser, const CString& sVal) {
+				pUser->SetAdmin(sVal.ToBool());
 				return true;
 			},
-			[=](CUser* pObject) {
-				pObject->SetAdmin(false);
+			[=](CUser* pUser) {
+				pUser->SetAdmin(false);
 				return true;
 			}
 		},
 		{
 			"AdminInfix", StringType,
 			"An infix (after the status prefix) for admin queries.",
-			[=](const CUser* pObject) {
+			[=](const CUser* pUser) {
 				return GetInfix();
 			},
-			[=](CUser* pObject, const CString& sVal) {
+			[=](CUser* pUser, const CString& sVal) {
 				SetInfix(sVal);
 				return true;
 			},
-			[=](CUser* pObject) {
+			[=](CUser* pUser) {
 				SetInfix(GetUser()->GetStatusPrefix());
 				return true;
 			}
@@ -341,131 +341,131 @@ private:
 		{
 			"Allow", ListType,
 			"The list of allowed IPs for the user. Wildcards (*) are supported.",
-			[=](const CUser* pObject) {
-				const SCString& ssHosts = pObject->GetAllowedHosts();
+			[=](const CUser* pUser) {
+				const SCString& ssHosts = pUser->GetAllowedHosts();
 				return CString("\n").Join(ssHosts.begin(), ssHosts.end());
 			},
-			[=](CUser* pObject, const CString& sVal) {
+			[=](CUser* pUser, const CString& sVal) {
 				SCString ssHosts;
 				sVal.Split(" ", ssHosts, false);
 				for (const CString& sHost : ssHosts)
-					pObject->AddAllowedHost(sHost);
+					pUser->AddAllowedHost(sHost);
 				return true;
 			},
-			[=](CUser* pObject) {
-				pObject->ClearAllowedHosts();
+			[=](CUser* pUser) {
+				pUser->ClearAllowedHosts();
 				return true;
 			}
 		},
 		{
 			"AltNick", StringType,
 			"The default alternate nick.",
-			[=](const CUser* pObject) {
-				return pObject->GetAltNick();
+			[=](const CUser* pUser) {
+				return pUser->GetAltNick();
 			},
-			[=](CUser* pObject, const CString& sVal) {
-				pObject->SetAltNick(sVal);
+			[=](CUser* pUser, const CString& sVal) {
+				pUser->SetAltNick(sVal);
 				return true;
 			},
-			[=](CUser* pObject) {
-				pObject->SetAltNick("");
+			[=](CUser* pUser) {
+				pUser->SetAltNick("");
 				return true;
 			}
 		},
 		{
 			"AppendTimestamp", BoolType,
 			"Whether timestamps are appended to buffer playback messages.",
-			[=](const CUser* pObject) {
-				return CString(pObject->GetTimestampAppend());
+			[=](const CUser* pUser) {
+				return CString(pUser->GetTimestampAppend());
 			},
-			[=](CUser* pObject, const CString& sVal) {
-				pObject->SetTimestampAppend(sVal.ToBool());
+			[=](CUser* pUser, const CString& sVal) {
+				pUser->SetTimestampAppend(sVal.ToBool());
 				return true;
 			},
-			[=](CUser* pObject) {
-				pObject->SetTimestampAppend(false);
+			[=](CUser* pUser) {
+				pUser->SetTimestampAppend(false);
 				return true;
 			}
 		},
 		{
 			"AutoClearChanBuffer", BoolType,
 			"Whether channel buffers are automatically cleared after playback.",
-			[=](const CUser* pObject) {
-				return CString(pObject->AutoClearChanBuffer());
+			[=](const CUser* pUser) {
+				return CString(pUser->AutoClearChanBuffer());
 			},
-			[=](CUser* pObject, const CString& sVal) {
-				pObject->SetAutoClearChanBuffer(sVal.ToBool());
+			[=](CUser* pUser, const CString& sVal) {
+				pUser->SetAutoClearChanBuffer(sVal.ToBool());
 				return true;
 			},
-			[=](CUser* pObject) {
-				pObject->SetAutoClearChanBuffer(true);
+			[=](CUser* pUser) {
+				pUser->SetAutoClearChanBuffer(true);
 				return true;
 			}
 		},
 		{
 			"AutoClearQueryBuffer", BoolType,
 			"Whether query buffers are automatically cleared after playback.",
-			[=](const CUser* pObject) {
-				return CString(pObject->AutoClearQueryBuffer());
+			[=](const CUser* pUser) {
+				return CString(pUser->AutoClearQueryBuffer());
 			},
-			[=](CUser* pObject, const CString& sVal) {
-				pObject->SetAutoClearQueryBuffer(sVal.ToBool());
+			[=](CUser* pUser, const CString& sVal) {
+				pUser->SetAutoClearQueryBuffer(sVal.ToBool());
 				return true;
 			},
-			[=](CUser* pObject) {
-				pObject->SetAutoClearQueryBuffer(true);
+			[=](CUser* pUser) {
+				pUser->SetAutoClearQueryBuffer(true);
 				return true;
 			}
 		},
 		{
 			"BindHost", StringType,
 			"The default bind host.",
-			[=](const CUser* pObject) {
-				return pObject->GetBindHost();
+			[=](const CUser* pUser) {
+				return pUser->GetBindHost();
 			},
-			[=](CUser* pObject, const CString& sVal) {
+			[=](CUser* pUser, const CString& sVal) {
 				if (!GetUser()->IsAdmin() && GetUser()->DenySetBindHost()) {
 					PutError("access denied");
 					return false;
 				}
-				pObject->SetBindHost(sVal);
+				pUser->SetBindHost(sVal);
 				return true;
 			},
-			[=](CUser* pObject) {
-				pObject->SetBindHost("");
+			[=](CUser* pUser) {
+				pUser->SetBindHost("");
 				return true;
 			}
 		},
 		{
 			"ChanBufferSize", IntType,
 			"The maximum amount of lines stored for each channel playback buffer.",
-			[=](const CUser* pObject) {
-				return CString(pObject->GetChanBufferSize());
+			[=](const CUser* pUser) {
+				return CString(pUser->GetChanBufferSize());
 			},
-			[=](CUser* pObject, const CString& sVal) {
-				if (!pObject->SetChanBufferSize(sVal.ToUInt(), GetUser()->IsAdmin())) {
+			[=](CUser* pUser, const CString& sVal) {
+				if (!pUser->SetChanBufferSize(sVal.ToUInt(), GetUser()->IsAdmin())) {
 					PutError("exceeded limit " + CString(CZNC::Get().GetMaxBufferSize()));
 					return false;
 				}
 				return true;
 			},
-			[=](CUser* pObject) {
-				pObject->SetChanBufferSize(50);
+			[=](CUser* pUser) {
+				pUser->SetChanBufferSize(50);
 				return true;
 			},
 		},
 		{
 			"ChanModes", StringType,
 			"The default modes ZNC sets when joining an empty channel.",
-			[=](const CUser* pObject) {
-				return pObject->GetDefaultChanModes();
+			[=](const CUser* pUser) {
+				return pUser->GetDefaultChanModes();
 			},
-			[=](CUser* pObject, const CString& sVal) {
-				pObject->SetDefaultChanModes(sVal);
+			[=](CUser* pUser, const CString& sVal) {
+				pUser->SetDefaultChanModes(sVal);
 				return true;
 			},
-			[=](CUser* pObject) {
-				pObject->SetDefaultChanModes("");
+			[=](CUser* pUser) {
+				pUser->SetDefaultChanModes("");
 				return true;
 			}
 		},
@@ -473,15 +473,15 @@ private:
 		{
 			"ClientEncoding", StringType,
 			"The default client encoding.",
-			[=](const CUser* pObject) {
-				return pObject->GetClientEncoding();
+			[=](const CUser* pUser) {
+				return pUser->GetClientEncoding();
 			},
-			[=](CUser* pObject, const CString& sVal) {
-				pObject->SetClientEncoding(sVal);
+			[=](CUser* pUser, const CString& sVal) {
+				pUser->SetClientEncoding(sVal);
 				return true;
 			},
-			[=](CUser* pObject) {
-				pObject->SetClientEncoding("");
+			[=](CUser* pUser) {
+				pUser->SetClientEncoding("");
 				return true;
 			}
 		},
@@ -489,108 +489,108 @@ private:
 		{
 			"CTCPReply", ListType,
 			"A list of CTCP request-reply-pairs. Syntax: <request> <reply>.",
-			[=](const CUser* pObject) {
+			[=](const CUser* pUser) {
 				VCString vsReplies;
-				for (const auto& it : pObject->GetCTCPReplies())
+				for (const auto& it : pUser->GetCTCPReplies())
 					vsReplies.push_back(it.first + " " + it.second);
 				return CString("\n").Join(vsReplies.begin(), vsReplies.end());
 			},
-			[=](CUser* pObject, const CString& sVal) {
+			[=](CUser* pUser, const CString& sVal) {
 				CString sRequest = sVal.Token(0);
 				CString sReply = sVal.Token(1, true);
 				if (sReply.empty()) {
-					if (!pObject->DelCTCPReply(sRequest.AsUpper())) {
+					if (!pUser->DelCTCPReply(sRequest.AsUpper())) {
 						PutError("unable to remove");
 						return false;
 					}
 				} else {
-					if (!pObject->AddCTCPReply(sRequest, sReply)) {
+					if (!pUser->AddCTCPReply(sRequest, sReply)) {
 						PutError("unable to add");
 						return false;
 					}
 				}
 				return true;
 			},
-			[=](CUser* pObject) {
-				MCString mReplies = pObject->GetCTCPReplies();
+			[=](CUser* pUser) {
+				MCString mReplies = pUser->GetCTCPReplies();
 				for (const auto& it : mReplies)
-					pObject->DelCTCPReply(it.first);
+					pUser->DelCTCPReply(it.first);
 				return true;
 			}
 		},
 		{
 			"DCCBindHost", StringType,
 			"An optional bindhost for DCC connections.",
-			[=](const CUser* pObject) {
-				return pObject->GetDCCBindHost();
+			[=](const CUser* pUser) {
+				return pUser->GetDCCBindHost();
 			},
-			[=](CUser* pObject, const CString& sVal) {
+			[=](CUser* pUser, const CString& sVal) {
 				if (!GetUser()->IsAdmin() && GetUser()->DenySetBindHost()) {
 					PutError("access denied");
 					return false;
 				}
-				pObject->SetDCCBindHost(sVal);
+				pUser->SetDCCBindHost(sVal);
 				return true;
 			},
-			[=](CUser* pObject) {
-				pObject->SetDCCBindHost("");
+			[=](CUser* pUser) {
+				pUser->SetDCCBindHost("");
 				return true;
 			}
 		},
 		{
 			"DenyLoadMod", BoolType,
 			"Whether the user is denied access to load modules.",
-			[=](const CUser* pObject) {
-				return CString(pObject->DenyLoadMod());
+			[=](const CUser* pUser) {
+				return CString(pUser->DenyLoadMod());
 			},
-			[=](CUser* pObject, const CString& sVal) {
+			[=](CUser* pUser, const CString& sVal) {
 				if (!GetUser()->IsAdmin()) {
 					PutError("access denied");
 					return false;
 				}
-				pObject->SetDenyLoadMod(sVal.ToBool());
+				pUser->SetDenyLoadMod(sVal.ToBool());
 				return true;
 			},
-			[=](CUser* pObject) {
+			[=](CUser* pUser) {
 				if (!GetUser()->IsAdmin()) {
 					PutError("access denied");
 					return false;
 				}
-				pObject->SetDenyLoadMod(false);
+				pUser->SetDenyLoadMod(false);
 				return true;
 			}
 		},
 		{
 			"DenySetBindHost", BoolType,
 			"Whether the user is denied access to set a bind host.",
-			[=](const CUser* pObject) {
-				return CString(pObject->DenySetBindHost());
+			[=](const CUser* pUser) {
+				return CString(pUser->DenySetBindHost());
 			},
-			[=](CUser* pObject, const CString& sVal) {
+			[=](CUser* pUser, const CString& sVal) {
 				if (!GetUser()->IsAdmin()) {
 					PutError("access denied");
 					return false;
 				}
-				pObject->SetDenySetBindHost(sVal.ToBool());
+				pUser->SetDenySetBindHost(sVal.ToBool());
 				return true;
 			},
-			[=](CUser* pObject) {
+			[=](CUser* pUser) {
 				if (!GetUser()->IsAdmin()) {
 					PutError("access denied");
 					return false;
 				}
-				pObject->SetDenySetBindHost(false);
+				pUser->SetDenySetBindHost(false);
 				return true;
 			}
 		},
 		{
 			"Ident", StringType,
 			"The default ident.",
-			[=](const CUser* pObject) {
-				return pObject->GetIdent();
+			[=](const CUser* pUser) {
+				return pUser->GetIdent();
 			},
-			[=](CUser* pObject, const CString& sVal) {
-				pObject->SetIdent(sVal);
+			[=](CUser* pUser, const CString& sVal) {
+				pUser->SetIdent(sVal);
 				return true;
 			},
 			nullptr
@@ -598,126 +598,126 @@ private:
 		{
 			"JoinTries", IntType,
 			"The amount of times channels are attempted to join in case of a failure.",
-			[=](const CUser* pObject) {
-				return CString(pObject->JoinTries());
+			[=](const CUser* pUser) {
+				return CString(pUser->JoinTries());
 			},
-			[=](CUser* pObject, const CString& sVal) {
-				pObject->SetJoinTries(sVal.ToUInt());
+			[=](CUser* pUser, const CString& sVal) {
+				pUser->SetJoinTries(sVal.ToUInt());
 				return true;
 			},
-			[=](CUser* pObject) {
-				pObject->SetJoinTries(10);
+			[=](CUser* pUser) {
+				pUser->SetJoinTries(10);
 				return true;
 			}
 		},
 		{
 			"MaxJoins", IntType,
 			"The maximum number of channels ZNC joins at once.",
-			[=](const CUser* pObject) {
-				return CString(pObject->MaxJoins());
+			[=](const CUser* pUser) {
+				return CString(pUser->MaxJoins());
 			},
-			[=](CUser* pObject, const CString& sVal) {
-				pObject->SetMaxJoins(sVal.ToUInt());
+			[=](CUser* pUser, const CString& sVal) {
+				pUser->SetMaxJoins(sVal.ToUInt());
 				return true;
 			},
-			[=](CUser* pObject) {
-				pObject->SetMaxJoins(0);
+			[=](CUser* pUser) {
+				pUser->SetMaxJoins(0);
 				return true;
 			}
 		},
 		{
 			"MaxNetworks", IntType,
 			"The maximum number of networks the user is allowed to have.",
-			[=](const CUser* pObject) {
-				return CString(pObject->MaxNetworks());
+			[=](const CUser* pUser) {
+				return CString(pUser->MaxNetworks());
 			},
-			[=](CUser* pObject, const CString& sVal) {
+			[=](CUser* pUser, const CString& sVal) {
 				if (!GetUser()->IsAdmin()) {
 					PutError("access denied");
 					return false;
 				}
-				pObject->SetMaxNetworks(sVal.ToUInt());
+				pUser->SetMaxNetworks(sVal.ToUInt());
 				return true;
 			},
-			[=](CUser* pObject) {
+			[=](CUser* pUser) {
 				if (!GetUser()->IsAdmin()) {
 					PutError("access denied");
 					return false;
 				}
-				pObject->SetMaxNetworks(1);
+				pUser->SetMaxNetworks(1);
 				return true;
 			}
 		},
 		{
 			"MaxQueryBuffers", IntType,
 			"The maximum number of query buffers that are stored.",
-			[=](const CUser* pObject) {
-				return CString(pObject->MaxQueryBuffers());
+			[=](const CUser* pUser) {
+				return CString(pUser->MaxQueryBuffers());
 			},
-			[=](CUser* pObject, const CString& sVal) {
-				pObject->SetMaxQueryBuffers(sVal.ToUInt());
+			[=](CUser* pUser, const CString& sVal) {
+				pUser->SetMaxQueryBuffers(sVal.ToUInt());
 				return true;
 			},
-			[=](CUser* pObject) {
-				pObject->SetMaxQueryBuffers(50);
+			[=](CUser* pUser) {
+				pUser->SetMaxQueryBuffers(50);
 				return true;
 			}
 		},
 		{
 			"MultiClients", BoolType,
 			"Whether multiple clients are allowed to connect simultaneously.",
-			[=](const CUser* pObject) {
-				return CString(pObject->MultiClients());
+			[=](const CUser* pUser) {
+				return CString(pUser->MultiClients());
 			},
-			[=](CUser* pObject, const CString& sVal) {
-				pObject->SetMultiClients(sVal.ToBool());
+			[=](CUser* pUser, const CString& sVal) {
+				pUser->SetMultiClients(sVal.ToBool());
 				return true;
 			},
-			[=](CUser* pObject) {
-				pObject->SetMultiClients(true);
+			[=](CUser* pUser) {
+				pUser->SetMultiClients(true);
 				return true;
 			}
 		},
 		{
 			"Nick", StringType,
 			"The default primary nick.",
-			[=](const CUser* pObject) {
-				return pObject->GetNick();
+			[=](const CUser* pUser) {
+				return pUser->GetNick();
 			},
-			[=](CUser* pObject, const CString& sVal) {
-				pObject->SetNick(sVal);
+			[=](CUser* pUser, const CString& sVal) {
+				pUser->SetNick(sVal);
 				return true;
 			},
-			[=](CUser* pObject) {
-				pObject->SetNick("");
+			[=](CUser* pUser) {
+				pUser->SetNick("");
 				return true;
 			}
 		},
 		{
 			"PrependTimestamp", BoolType,
 			"Whether timestamps are prepended to buffer playback messages.",
-			[=](const CUser* pObject) {
-				return CString(pObject->GetTimestampPrepend());
+			[=](const CUser* pUser) {
+				return CString(pUser->GetTimestampPrepend());
 			},
-			[=](CUser* pObject, const CString& sVal) {
-				pObject->SetTimestampPrepend(sVal.ToBool());
+			[=](CUser* pUser, const CString& sVal) {
+				pUser->SetTimestampPrepend(sVal.ToBool());
 				return true;
 			},
-			[=](CUser* pObject) {
-				pObject->SetTimestampPrepend(true);
+			[=](CUser* pUser) {
+				pUser->SetTimestampPrepend(true);
 				return true;
 			}
 		},
 		{
 			"Password", StringType,
 			"",
-			[=](const CUser* pObject) {
-				return CString(".", pObject->GetPass().size());
+			[=](const CUser* pUser) {
+				return CString(".", pUser->GetPass().size());
 			},
-			[=](CUser* pObject, const CString& sVal) {
+			[=](CUser* pUser, const CString& sVal) {
 				const CString sSalt = CUtils::GetSalt();
 				const CString sHash = CUser::SaltedHash(sVal, sSalt);
-				pObject->SetPass(sHash, CUser::HASH_DEFAULT, sSalt);
+				pUser->SetPass(sHash, CUser::HASH_DEFAULT, sSalt);
 				return true;
 			},
 			nullptr
@@ -725,108 +725,108 @@ private:
 		{
 			"QueryBufferSize", IntType,
 			"The maximum amount of lines stored for each query playback buffer.",
-			[=](const CUser* pObject) {
-				return CString(pObject->GetQueryBufferSize());
+			[=](const CUser* pUser) {
+				return CString(pUser->GetQueryBufferSize());
 			},
-			[=](CUser* pObject, const CString& sVal) {
-				if (!pObject->SetQueryBufferSize(sVal.ToUInt(), GetUser()->IsAdmin())) {
+			[=](CUser* pUser, const CString& sVal) {
+				if (!pUser->SetQueryBufferSize(sVal.ToUInt(), GetUser()->IsAdmin())) {
 					PutError("exceeded limit " + CString(CZNC::Get().GetMaxBufferSize()));
 					return false;
 				}
 				return true;
 			},
-			[=](CUser* pObject) {
-				pObject->SetQueryBufferSize(50);
+			[=](CUser* pUser) {
+				pUser->SetQueryBufferSize(50);
 				return true;
 			}
 		},
 		{
 			"QuitMsg", StringType,
 			"The default quit message ZNC uses when disconnecting or shutting down.",
-			[=](const CUser* pObject) {
-				return pObject->GetQuitMsg();
+			[=](const CUser* pUser) {
+				return pUser->GetQuitMsg();
 			},
-			[=](CUser* pObject, const CString& sVal) {
-				pObject->SetQuitMsg(sVal);
+			[=](CUser* pUser, const CString& sVal) {
+				pUser->SetQuitMsg(sVal);
 				return true;
 			},
-			[=](CUser* pObject) {
-				pObject->SetQuitMsg("");
+			[=](CUser* pUser) {
+				pUser->SetQuitMsg("");
 				return true;
 			}
 		},
 		{
 			"RealName", StringType,
 			"The default real name.",
-			[=](const CUser* pObject) {
-				return pObject->GetRealName();
+			[=](const CUser* pUser) {
+				return pUser->GetRealName();
 			},
-			[=](CUser* pObject, const CString& sVal) {
-				pObject->SetRealName(sVal);
+			[=](CUser* pUser, const CString& sVal) {
+				pUser->SetRealName(sVal);
 				return true;
 			},
-			[=](CUser* pObject) {
-				pObject->SetRealName("");
+			[=](CUser* pUser) {
+				pUser->SetRealName("");
 				return true;
 			}
 		},
 		{
 			"Skin", StringType,
 			"The web interface skin.",
-			[=](const CUser* pObject) {
-				return pObject->GetSkinName();
+			[=](const CUser* pUser) {
+				return pUser->GetSkinName();
 			},
-			[=](CUser* pObject, const CString& sVal) {
-				pObject->SetSkinName(sVal);
+			[=](CUser* pUser, const CString& sVal) {
+				pUser->SetSkinName(sVal);
 				return true;
 			},
-			[=](CUser* pObject) {
-				pObject->SetSkinName("");
+			[=](CUser* pUser) {
+				pUser->SetSkinName("");
 				return true;
 			}
 		},
 		{
 			"StatusPrefix", StringType,
 			"The prefix for status and module queries.",
-			[=](const CUser* pObject) {
-				return pObject->GetStatusPrefix();
+			[=](const CUser* pUser) {
+				return pUser->GetStatusPrefix();
 			},
-			[=](CUser* pObject, const CString& sVal) {
-				pObject->SetStatusPrefix(sVal);
+			[=](CUser* pUser, const CString& sVal) {
+				pUser->SetStatusPrefix(sVal);
 				return true;
 			},
-			[=](CUser* pObject) {
-				pObject->SetStatusPrefix("*");
+			[=](CUser* pUser) {
+				pUser->SetStatusPrefix("*");
 				return true;
 			}
 		},
 		{
 			"TimestampFormat", StringType,
 			"The format of the timestamps used in buffer playback messages.",
-			[=](const CUser* pObject) {
-				return pObject->GetTimestampFormat();
+			[=](const CUser* pUser) {
+				return pUser->GetTimestampFormat();
 			},
-			[=](CUser* pObject, const CString& sVal) {
-				pObject->SetTimestampFormat(sVal);
+			[=](CUser* pUser, const CString& sVal) {
+				pUser->SetTimestampFormat(sVal);
 				return true;
 			},
-			[=](CUser* pObject) {
-				pObject->SetTimestampFormat("[%H:%M:%S]");
+			[=](CUser* pUser) {
+				pUser->SetTimestampFormat("[%H:%M:%S]");
 				return true;
 			}
 		},
 		{
 			"Timezone", StringType,
 			"The timezone used for timestamps in buffer playback messages.",
-			[=](const CUser* pObject) {
-				return pObject->GetTimezone();
+			[=](const CUser* pUser) {
+				return pUser->GetTimezone();
 			},
-			[=](CUser* pObject, const CString& sVal) {
-				pObject->SetTimezone(sVal);
+			[=](CUser* pUser, const CString& sVal) {
+				pUser->SetTimezone(sVal);
 				return true;
 			},
-			[=](CUser* pObject) {
-				pObject->SetTimezone("");
+			[=](CUser* pUser) {
+				pUser->SetTimezone("");
 				return true;
 			}
 		},
@@ -836,34 +836,34 @@ private:
 		{
 			"AltNick", StringType,
 			"An optional network specific alternate nick used if the primary nick is reserved.",
-			[=](const CIRCNetwork* pObject) {
-				return pObject->GetAltNick();
+			[=](const CIRCNetwork* pNetwork) {
+				return pNetwork->GetAltNick();
 			},
-			[=](CIRCNetwork* pObject, const CString& sVal) {
-				pObject->SetAltNick(sVal);
+			[=](CIRCNetwork* pNetwork, const CString& sVal) {
+				pNetwork->SetAltNick(sVal);
 				return true;
 			},
-			[=](CIRCNetwork* pObject) {
-				pObject->SetAltNick("");
+			[=](CIRCNetwork* pNetwork) {
+				pNetwork->SetAltNick("");
 				return true;
 			}
 		},
 		{
 			"BindHost", StringType,
 			"An optional network specific bind host.",
-			[=](const CIRCNetwork* pObject) {
-				return pObject->GetBindHost();
+			[=](const CIRCNetwork* pNetwork) {
+				return pNetwork->GetBindHost();
 			},
-			[=](CIRCNetwork* pObject, const CString& sVal) {
+			[=](CIRCNetwork* pNetwork, const CString& sVal) {
 				if (!GetUser()->IsAdmin() && GetUser()->DenySetBindHost()) {
 					PutError("access denied");
 					return false;
 				}
-				pObject->SetBindHost(sVal);
+				pNetwork->SetBindHost(sVal);
 				return true;
 			},
-			[=](CIRCNetwork* pObject) {
-				pObject->SetBindHost("");
+			[=](CIRCNetwork* pNetwork) {
+				pNetwork->SetBindHost("");
 				return true;
 			}
 		},
@@ -871,15 +871,15 @@ private:
 		{
 			"Encoding", StringType,
 			"An optional network specific client encoding.",
-			[=](const CIRCNetwork* pObject) {
-				return pObject->GetEncoding();
+			[=](const CIRCNetwork* pNetwork) {
+				return pNetwork->GetEncoding();
 			},
-			[=](CIRCNetwork* pObject, const CString& sVal) {
-				pObject->SetEncoding(sVal);
+			[=](CIRCNetwork* pNetwork, const CString& sVal) {
+				pNetwork->SetEncoding(sVal);
 				return true;
 			},
-			[=](CIRCNetwork* pObject) {
-				pObject->SetEncoding("");
+			[=](CIRCNetwork* pNetwork) {
+				pNetwork->SetEncoding("");
 				return true;
 			}
 		},
@@ -887,45 +887,45 @@ private:
 		{
 			"FloodBurst", IntType,
 			"The maximum amount of lines ZNC sends at once.",
-			[=](const CIRCNetwork* pObject) {
-				return CString(pObject->GetFloodBurst());
+			[=](const CIRCNetwork* pNetwork) {
+				return CString(pNetwork->GetFloodBurst());
 			},
-			[=](CIRCNetwork* pObject, const CString& sVal) {
-				pObject->SetFloodBurst(sVal.ToUShort());
+			[=](CIRCNetwork* pNetwork, const CString& sVal) {
+				pNetwork->SetFloodBurst(sVal.ToUShort());
 				return true;
 			},
-			[=](CIRCNetwork* pObject) {
-				pObject->SetFloodBurst(4);
+			[=](CIRCNetwork* pNetwork) {
+				pNetwork->SetFloodBurst(4);
 				return true;
 			}
 		},
 		{
 			"FloodRate", DoubleType,
 			"The number of lines per second ZNC sends after reaching the FloodBurst limit.",
-			[=](const CIRCNetwork* pObject) {
-				return CString(pObject->GetFloodRate());
+			[=](const CIRCNetwork* pNetwork) {
+				return CString(pNetwork->GetFloodRate());
 			},
-			[=](CIRCNetwork* pObject, const CString& sVal) {
-				pObject->SetFloodRate(sVal.ToDouble());
+			[=](CIRCNetwork* pNetwork, const CString& sVal) {
+				pNetwork->SetFloodRate(sVal.ToDouble());
 				return true;
 			},
-			[=](CIRCNetwork* pObject) {
-				pObject->SetFloodRate(1);
+			[=](CIRCNetwork* pNetwork) {
+				pNetwork->SetFloodRate(1);
 				return true;
 			}
 		},
 		{
 			"Ident", StringType,
 			"An optional network specific ident.",
-			[=](const CIRCNetwork* pObject) {
-				return pObject->GetIdent();
+			[=](const CIRCNetwork* pNetwork) {
+				return pNetwork->GetIdent();
 			},
-			[=](CIRCNetwork* pObject, const CString& sVal) {
-				pObject->SetIdent(sVal);
+			[=](CIRCNetwork* pNetwork, const CString& sVal) {
+				pNetwork->SetIdent(sVal);
 				return true;
 			},
-			[=](CIRCNetwork* pObject) {
-				pObject->SetIdent("");
+			[=](CIRCNetwork* pNetwork) {
+				pNetwork->SetIdent("");
 				return true;
 			}
 		},
@@ -933,76 +933,76 @@ private:
 		{
 			"JoinDelay", IntType,
 			"The delay in seconds, until channels are joined after getting connected.",
-			[=](const CIRCNetwork* pObject) {
-				return CString(pObject->GetJoinDelay());
+			[=](const CIRCNetwork* pNetwork) {
+				return CString(pNetwork->GetJoinDelay());
 			},
-			[=](CIRCNetwork* pObject, const CString& sVal) {
-				pObject->SetJoinDelay(sVal.ToUShort());
+			[=](CIRCNetwork* pNetwork, const CString& sVal) {
+				pNetwork->SetJoinDelay(sVal.ToUShort());
 				return true;
 			},
-			[=](CIRCNetwork* pObject) {
-				pObject->SetJoinDelay(0);
+			[=](CIRCNetwork* pNetwork) {
+				pNetwork->SetJoinDelay(0);
 				return true;
 			}
 		},
 		{
 			"Nick", StringType,
 			"An optional network specific primary nick.",
-			[=](const CIRCNetwork* pObject) {
-				return pObject->GetNick();
+			[=](const CIRCNetwork* pNetwork) {
+				return pNetwork->GetNick();
 			},
-			[=](CIRCNetwork* pObject, const CString& sVal) {
-				pObject->SetNick(sVal);
+			[=](CIRCNetwork* pNetwork, const CString& sVal) {
+				pNetwork->SetNick(sVal);
 				return true;
 			},
-			[=](CIRCNetwork* pObject) {
-				pObject->SetNick("");
+			[=](CIRCNetwork* pNetwork) {
+				pNetwork->SetNick("");
 				return true;
 			}
 		},
 		{
 			"QuitMsg", StringType,
 			"An optional network specific quit message ZNC uses when disconnecting or shutting down.",
-			[=](const CIRCNetwork* pObject) {
-				return pObject->GetQuitMsg();
+			[=](const CIRCNetwork* pNetwork) {
+				return pNetwork->GetQuitMsg();
 			},
-			[=](CIRCNetwork* pObject, const CString& sVal) {
-				pObject->SetQuitMsg(sVal);
+			[=](CIRCNetwork* pNetwork, const CString& sVal) {
+				pNetwork->SetQuitMsg(sVal);
 				return true;
 			},
-			[=](CIRCNetwork* pObject) {
-				pObject->SetQuitMsg("");
+			[=](CIRCNetwork* pNetwork) {
+				pNetwork->SetQuitMsg("");
 				return true;
 			}
 		},
 		{
 			"RealName", StringType,
 			"An optional network specific real name.",
-			[=](const CIRCNetwork* pObject) {
-				return pObject->GetRealName();
+			[=](const CIRCNetwork* pNetwork) {
+				return pNetwork->GetRealName();
 			},
-			[=](CIRCNetwork* pObject, const CString& sVal) {
-				pObject->SetRealName(sVal);
+			[=](CIRCNetwork* pNetwork, const CString& sVal) {
+				pNetwork->SetRealName(sVal);
 				return true;
 			},
-			[=](CIRCNetwork* pObject) {
-				pObject->SetRealName("");
+			[=](CIRCNetwork* pNetwork) {
+				pNetwork->SetRealName("");
 				return true;
 			}
 		},
 		{
 			"TrustedServerFingerprint", ListType,
 			"The list of trusted server fingerprints.",
-			[=](const CIRCNetwork* pObject) {
-				const SCString& sFP = pObject->GetTrustedFingerprints();
+			[=](const CIRCNetwork* pNetwork) {
+				const SCString& sFP = pNetwork->GetTrustedFingerprints();
 				return CString("\n").Join(sFP.begin(), sFP.end());
 			},
-			[=](CIRCNetwork* pObject, const CString& sVal) {
-				pObject->AddTrustedFingerprint(sVal);
+			[=](CIRCNetwork* pNetwork, const CString& sVal) {
+				pNetwork->AddTrustedFingerprint(sVal);
 				return true;
 			},
-			[=](CIRCNetwork* pObject) {
-				pObject->ClearTrustedFingerprints();
+			[=](CIRCNetwork* pNetwork) {
+				pNetwork->ClearTrustedFingerprints();
 				return true;
 			}
 		},
@@ -1012,94 +1012,94 @@ private:
 		{
 			"AutoClearChanBuffer", BoolType,
 			"Whether the channel buffer is automatically cleared after playback.",
-			[=](const CChan* pObject) {
-				CString sVal(pObject->AutoClearChanBuffer());
-				if (!pObject->HasAutoClearChanBufferSet())
+			[=](const CChan* pChan) {
+				CString sVal(pChan->AutoClearChanBuffer());
+				if (!pChan->HasAutoClearChanBufferSet())
 					sVal += " (default)";
 				return sVal;
 			},
-			[=](CChan* pObject, const CString& sVal) {
-				pObject->SetAutoClearChanBuffer(sVal.ToBool());
+			[=](CChan* pChan, const CString& sVal) {
+				pChan->SetAutoClearChanBuffer(sVal.ToBool());
 				return true;
 			},
-			[=](CChan* pObject) {
-				pObject->ResetAutoClearChanBuffer();
+			[=](CChan* pChan) {
+				pChan->ResetAutoClearChanBuffer();
 				return true;
 			}
 		},
 		{
 			"Buffer", IntType,
 			"The maximum amount of lines stored for the channel specific playback buffer.",
-			[=](const CChan* pObject) {
-				CString sVal(pObject->GetBufferCount());
-				if (!pObject->HasBufferCountSet())
+			[=](const CChan* pChan) {
+				CString sVal(pChan->GetBufferCount());
+				if (!pChan->HasBufferCountSet())
 					sVal += " (default)";
 				return sVal;
 			},
-			[=](CChan* pObject, const CString& sVal) {
-				if (!pObject->SetBufferCount(sVal.ToUInt(), GetUser()->IsAdmin())) {
+			[=](CChan* pChan, const CString& sVal) {
+				if (!pChan->SetBufferCount(sVal.ToUInt(), GetUser()->IsAdmin())) {
 					PutError("exceeded limit " + CString(CZNC::Get().GetMaxBufferSize()));
 					return false;
 				}
 				return true;
 			},
-			[=](CChan* pObject) {
-				pObject->ResetBufferCount();
+			[=](CChan* pChan) {
+				pChan->ResetBufferCount();
 				return true;
 			}
 		},
 		{
 			"Detached", BoolType,
 			"Whether the channel is detached.",
-			[=](const CChan* pObject) {
-				return CString(pObject->IsDetached());
+			[=](const CChan* pChan) {
+				return CString(pChan->IsDetached());
 			},
-			[=](CChan* pObject, const CString& sVal) {
+			[=](CChan* pChan, const CString& sVal) {
 				bool b = sVal.ToBool();
-				if (b != pObject->IsDetached()) {
+				if (b != pChan->IsDetached()) {
 					if (b)
-						pObject->DetachUser();
+						pChan->DetachUser();
 					else
-						pObject->AttachUser();
+						pChan->AttachUser();
 				}
 				return true;
 			},
-			[=](CChan* pObject) {
-				if (pObject->IsDetached())
-					pObject->AttachUser();
+			[=](CChan* pChan) {
+				if (pChan->IsDetached())
+					pChan->AttachUser();
 				return true;
 			}
 		},
 		{
 			"Disabled", BoolType,
 			"Whether the channel is disabled.",
-			[=](const CChan* pObject) {
-				return CString(pObject->IsDisabled());
+			[=](const CChan* pChan) {
+				return CString(pChan->IsDisabled());
 			},
-			[=](CChan* pObject, const CString& sVal) {
+			[=](CChan* pChan, const CString& sVal) {
 				bool b = sVal.ToBool();
-				if (b != pObject->IsDisabled()) {
+				if (b != pChan->IsDisabled()) {
 					if (b)
-						pObject->Disable();
+						pChan->Disable();
 					else
-						pObject->Enable();
+						pChan->Enable();
 				}
 				return true;
 			},
-			[=](CChan* pObject) {
-				if (pObject->IsDisabled())
-					pObject->Enable();
+			[=](CChan* pChan) {
+				if (pChan->IsDisabled())
+					pChan->Enable();
 				return true;
 			}
 		},
 		{
 			"InConfig", BoolType,
 			"Whether the channel is stored in the config file.",
-			[=](const CChan* pObject) {
-				return CString(pObject->InConfig());
+			[=](const CChan* pChan) {
+				return CString(pChan->InConfig());
 			},
-			[=](CChan* pObject, const CString& sVal) {
-				pObject->SetInConfig(sVal.ToBool());
+			[=](CChan* pChan, const CString& sVal) {
+				pChan->SetInConfig(sVal.ToBool());
 				return true;
 			},
 			nullptr
@@ -1107,30 +1107,30 @@ private:
 		{
 			"Key", StringType,
 			"An optional channel key.",
-			[=](const CChan* pObject) {
-				return pObject->GetKey();
+			[=](const CChan* pChan) {
+				return pChan->GetKey();
 			},
-			[=](CChan* pObject, const CString& sVal) {
-				pObject->SetKey(sVal);
+			[=](CChan* pChan, const CString& sVal) {
+				pChan->SetKey(sVal);
 				return true;
 			},
-			[=](CChan* pObject) {
-				pObject->SetKey("");
+			[=](CChan* pChan) {
+				pChan->SetKey("");
 				return true;
 			}
 		},
 		{
 			"Modes", StringType,
 			"An optional set of default channel modes ZNC sets when joining an empty channel.",
-			[=](const CChan* pObject) {
-				return pObject->GetDefaultModes();
+			[=](const CChan* pChan) {
+				return pChan->GetDefaultModes();
 			},
-			[=](CChan* pObject, const CString& sVal) {
-				pObject->SetDefaultModes(sVal);
+			[=](CChan* pChan, const CString& sVal) {
+				pChan->SetDefaultModes(sVal);
 				return true;
 			},
-			[=](CChan* pObject) {
-				pObject->SetDefaultModes("");
+			[=](CChan* pChan) {
+				pChan->SetDefaultModes("");
 				return true;
 			}
 		},
@@ -1140,7 +1140,7 @@ private:
 		{
 			"AddUser <username> <password>",
 			"Adds a new user.",
-			[=](CZNC* pObject, const CString& sArgs) {
+			[=](CZNC* pZNC, const CString& sArgs) {
 				if (!GetUser()->IsAdmin()) {
 					PutError("access denied");
 					return false;
@@ -1153,7 +1153,7 @@ private:
 					return false;
 				}
 
-				if (pObject->FindUser(sUsername)) {
+				if (pZNC->FindUser(sUsername)) {
 					PutError("already exists");
 					return false;
 				}
@@ -1175,7 +1175,7 @@ private:
 		{
 			"DelUser <username>",
 			"Deletes a user.",
-			[=](CZNC* pObject, const CString& sArgs) {
+			[=](CZNC* pZNC, const CString& sArgs) {
 				if (!GetUser()->IsAdmin()) {
 					PutError("access denied");
 					return false;
