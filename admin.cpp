@@ -51,9 +51,9 @@ public:
 	{
 		AddHelpCommand();
 		AddCommand("Get", nullptr, "<variable>", "Gets the value of a variable.");
-		AddCommand("List", nullptr, "[filter]", "Lists available variables filtered by name or type.");
 		AddCommand("Set", nullptr, "<variable> <value>", "Sets the value of a variable.");
 		AddCommand("Reset", nullptr, "<variable>", "Resets the value(s) of a variable.");
+		AddCommand("ListVars", nullptr, "[filter]", "Lists available variables filtered by name or type.");
 	}
 
 	void OnModCommand(const CString& sLine) override;
@@ -71,7 +71,7 @@ private:
 	template <typename V>
 	void OnHelpCommand(const CString& sTgt, const CString& sLine, const std::vector<V>& vVars);
 	template <typename T, typename V>
-	void OnListCommand(T* pTarget, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars);
+	void OnListVarsCommand(T* pTarget, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars);
 	template <typename T, typename V>
 	void OnGetCommand(T* pTarget, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars);
 	template <typename T, typename V>
@@ -1190,8 +1190,8 @@ void CAdminMod::OnModCommand(const CString& sLine)
 			PutModule("- channel settings of another network: /msg " + sPfx + "freenode/#znc help");
 			PutModule("- channel settings of another network of another user: /msg " + sPfx + "somebody/freenode/#znc help");
 		}
-	} else if (sCmd.Equals("List")) {
-		OnListCommand(&CZNC::Get(), GetModName(), sLine, GlobalVars);
+	} else if (sCmd.Equals("ListVars")) {
+		OnListVarsCommand(&CZNC::Get(), GetModName(), sLine, GlobalVars);
 	} else if (sCmd.Equals("Get")) {
 		OnGetCommand(&CZNC::Get(), GetModName(), sLine, GlobalVars);
 	} else if (sCmd.Equals("Set")) {
@@ -1301,8 +1301,8 @@ CModule::EModRet CAdminMod::OnUserCommand(CUser* pUser, const CString& sTgt, con
 
 	if (sCmd.Equals("Help"))
 		OnHelpCommand(sTgt, sLine, UserVars);
-	else if (sCmd.Equals("List"))
-		OnListCommand(pUser, sTgt, sLine, UserVars);
+	else if (sCmd.Equals("ListVars"))
+		OnListVarsCommand(pUser, sTgt, sLine, UserVars);
 	else if (sCmd.Equals("Get"))
 		OnGetCommand(pUser, sTgt, sLine, UserVars);
 	else if (sCmd.Equals("Set"))
@@ -1326,8 +1326,8 @@ CModule::EModRet CAdminMod::OnNetworkCommand(CIRCNetwork* pNetwork, const CStrin
 
 	if (sCmd.Equals("Help"))
 		OnHelpCommand(sTgt, sLine, NetworkVars);
-	else if (sCmd.Equals("List"))
-		OnListCommand(pNetwork, sTgt, sLine, NetworkVars);
+	else if (sCmd.Equals("ListVars"))
+		OnListVarsCommand(pNetwork, sTgt, sLine, NetworkVars);
 	else if (sCmd.Equals("Get"))
 		OnGetCommand(pNetwork, sTgt, sLine, NetworkVars);
 	else if (sCmd.Equals("Set"))
@@ -1351,8 +1351,8 @@ CModule::EModRet CAdminMod::OnChanCommand(CChan* pChan, const CString& sTgt, con
 
 	if (sCmd.Equals("Help"))
 		OnHelpCommand(sTgt, sLine, ChanVars);
-	else if (sCmd.Equals("List"))
-		OnListCommand(pChan, sTgt, sLine, ChanVars);
+	else if (sCmd.Equals("ListVars"))
+		OnListVarsCommand(pChan, sTgt, sLine, ChanVars);
 	else if (sCmd.Equals("Get"))
 		OnGetCommand(pChan, sTgt, sLine, ChanVars);
 	else if (sCmd.Equals("Set"))
@@ -1378,7 +1378,7 @@ void CAdminMod::OnHelpCommand(const CString& sTgt, const CString& sLine, const s
 }
 
 template <typename T, typename V>
-void CAdminMod::OnListCommand(T* pTarget, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars)
+void CAdminMod::OnListVarsCommand(T* pTarget, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars)
 {
 	const CString sFilter = sLine.Token(1);
 
@@ -1501,9 +1501,9 @@ CTable CAdminMod::FilterCmdTable(const CString& sFilter) const
 		Table.SetCell("Description", "Gets the value of a variable.");
 	}
 
-	if (sFilter.empty() || sFilter.Equals("List")) {
+	if (sFilter.empty() || sFilter.Equals("ListVars")) {
 		Table.AddRow();
-		Table.SetCell("Command", "List [filter]");
+		Table.SetCell("Command", "ListVars [filter]");
 		Table.SetCell("Description", "Lists available variables filtered by name or type.");
 	}
 
