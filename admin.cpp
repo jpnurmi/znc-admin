@@ -49,11 +49,6 @@ class CAdminMod : public CModule
 public:
 	MODCONSTRUCTOR(CAdminMod)
 	{
-		AddHelpCommand();
-		AddCommand("Get", nullptr, "<variable>", "Gets the value of a variable.");
-		AddCommand("Set", nullptr, "<variable> <value>", "Sets the value of a variable.");
-		AddCommand("Reset", nullptr, "<variable>", "Resets the value(s) of a variable.");
-		AddCommand("ListVars", nullptr, "[filter]", "Lists available variables filtered by name or type.");
 	}
 
 	void OnModCommand(const CString& sLine) override;
@@ -1161,11 +1156,17 @@ void CAdminMod::OnModCommand(const CString& sLine)
 	}
 
 	if (sCmd.Equals("Help")) {
-		HandleHelpCommand(sLine);
+		const CString sFilter = sLine.Token(1);
+
+		const CTable Table = FilterCmdTable(sFilter);
+		if (!Table.empty())
+			PutModule(Table);
+		else if (!sFilter.empty())
+			PutModule("No matches for '" + sFilter + "'");
 
 		const CString sPfx = GetUser()->GetStatusPrefix() + GetInfix();
 
-		if (sLine.Token(1).empty()) {
+		if (sFilter.empty()) {
 			PutModule("To access settings of the current user or network, open a query");
 			PutModule("with " + sPfx + "user or " + sPfx + "network, respectively.");
 			PutModule("-----");
@@ -1374,7 +1375,7 @@ void CAdminMod::OnHelpCommand(const CString& sTgt, const CString& sLine, const s
 	if (!Table.empty())
 		PutTable(sTgt, Table);
 	else
-		PutError(sTgt, "unknown command");
+		PutLine(sTgt, "No matches for '" + sFilter + "'");
 }
 
 template <typename T, typename V>
@@ -1495,25 +1496,31 @@ CTable CAdminMod::FilterCmdTable(const CString& sFilter) const
 	Table.AddColumn("Command");
 	Table.AddColumn("Description");
 
-	if (sFilter.empty() || sFilter.Equals("Get")) {
+	if (sFilter.empty() || CString("Get").WildCmp(sFilter, CString::CaseInsensitive)) {
 		Table.AddRow();
 		Table.SetCell("Command", "Get <variable>");
 		Table.SetCell("Description", "Gets the value of a variable.");
 	}
 
-	if (sFilter.empty() || sFilter.Equals("ListVars")) {
+	if (sFilter.empty() || CString("Help").WildCmp(sFilter, CString::CaseInsensitive)) {
+		Table.AddRow();
+		Table.SetCell("Command", "Help [filter]");
+		Table.SetCell("Description", "Generates this output.");
+	}
+
+	if (sFilter.empty() || CString("ListVars").WildCmp(sFilter, CString::CaseInsensitive)) {
 		Table.AddRow();
 		Table.SetCell("Command", "ListVars [filter]");
 		Table.SetCell("Description", "Lists available variables filtered by name or type.");
 	}
 
-	if (sFilter.empty() || sFilter.Equals("Set")) {
+	if (sFilter.empty() || CString("Set").WildCmp(sFilter, CString::CaseInsensitive)) {
 		Table.AddRow();
 		Table.SetCell("Command", "Set <variable> <value>");
 		Table.SetCell("Description", "Sets the value of a variable.");
 	}
 
-	if (sFilter.empty() || sFilter.Equals("Reset")) {
+	if (sFilter.empty() || CString("Reset").WildCmp(sFilter, CString::CaseInsensitive)) {
 		Table.AddRow();
 		Table.SetCell("Command", "Reset <variable> <value>");
 		Table.SetCell("Description", "Resets the value(s) of a variable.");
