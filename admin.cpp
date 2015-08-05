@@ -49,7 +49,7 @@ struct Command
 {
 	CString syntax;
 	CString description;
-	std::function<bool(T*, const CString&)> func;
+	std::function<void(T*, const CString&)> exec;
 };
 
 class CAdminMod : public CModule
@@ -82,7 +82,7 @@ private:
 	template <typename T, typename V>
 	void OnResetCommand(T* pObject, const CString& sLine, const std::vector<V>& vVars);
 	template <typename T, typename C>
-	void OnOtherCommand(T* pObject, const CString& sLine, const std::vector<C>& vCmds);
+	void OnExecCommand(T* pObject, const CString& sLine, const std::vector<C>& vCmds);
 
 	template <typename C>
 	CTable FilterCmdTable(const std::vector<C>& vCmds, const CString& sFilter) const;
@@ -1143,19 +1143,19 @@ private:
 			[=](CZNC* pZNC, const CString& sArgs) {
 				if (!GetUser()->IsAdmin()) {
 					PutError("access denied");
-					return false;
+					return;
 				}
 
 				const CString sUsername = sArgs.Token(0);
 				const CString sPassword = sArgs.Token(1);
 				if (sPassword.empty()) {
 					PutUsage("AddUser <username> <password>");
-					return false;
+					return;
 				}
 
 				if (pZNC->FindUser(sUsername)) {
 					PutError("already exists");
-					return false;
+					return;
 				}
 
 				CUser* pUser = new CUser(sUsername);
@@ -1163,13 +1163,10 @@ private:
 				pUser->SetPass(CUser::SaltedHash(sPassword, sSalt), CUser::HASH_DEFAULT, sSalt);
 
 				CString sError;
-				if (!CZNC::Get().AddUser(pUser, sError)) {
+				if (!pZNC->AddUser(pUser, sError)) {
 					PutError(sError);
 					delete pUser;
-					return false;
 				}
-
-				return true;
 			}
 		},
 		{
@@ -1178,28 +1175,28 @@ private:
 			[=](CZNC* pZNC, const CString& sArgs) {
 				if (!GetUser()->IsAdmin()) {
 					PutError("access denied");
-					return false;
+					return;
 				}
 
 				const CString sUsername = sArgs.Token(0);
 				if (sUsername.empty()) {
 					PutUsage("DelUser <username>");
-					return false;
+					return;
 				}
 
-				CUser *pUser = CZNC::Get().FindUser(sUsername);
+				CUser *pUser = pZNC->FindUser(sUsername);
 				if (!pUser) {
 					PutError("doesn't exist");
-					return false;
+					return;
 				}
 
 				if (pUser == GetUser()) {
 					PutError("access denied");
-					return false;
+					return;
 				}
 
-				CZNC::Get().DeleteUser(pUser->GetUserName());
-				return true;
+				if (!pZNC->DeleteUser(pUser->GetUserName()))
+					PutError("internal error");
 			}
 		},
 	};
@@ -1284,7 +1281,7 @@ void CAdminMod::OnModCommand(const CString& sLine)
 	} else if (sCmd.Equals("Reset")) {
 		OnResetCommand(&CZNC::Get(), sLine, GlobalVars);
 	} else {
-		OnOtherCommand(&CZNC::Get(), sLine, GlobalCmds);
+		OnExecCommand(&CZNC::Get(), sLine, GlobalCmds);
 	}
 }
 
@@ -1397,7 +1394,7 @@ CModule::EModRet CAdminMod::OnUserCommand(CUser* pUser, const CString& sLine)
 	else if (sCmd.Equals("Reset"))
 		OnResetCommand(pUser, sLine, UserVars);
 	else
-		OnOtherCommand(pUser, sLine, UserCmds);
+		OnExecCommand(pUser, sLine, UserCmds);
 
 	return HALT;
 }
@@ -1422,7 +1419,7 @@ CModule::EModRet CAdminMod::OnNetworkCommand(CIRCNetwork* pNetwork, const CStrin
 	else if (sCmd.Equals("Reset"))
 		OnResetCommand(pNetwork, sLine, NetworkVars);
 	else
-		OnOtherCommand(pNetwork, sLine, NetworkCmds);
+		OnExecCommand(pNetwork, sLine, NetworkCmds);
 
 	return HALT;
 }
@@ -1447,7 +1444,7 @@ CModule::EModRet CAdminMod::OnChanCommand(CChan* pChan, const CString& sLine)
 	else if (sCmd.Equals("Reset"))
 		OnResetCommand(pChan, sLine, ChanVars);
 	else
-		OnOtherCommand(pChan, sLine, ChanCmds);
+		OnExecCommand(pChan, sLine, ChanCmds);
 
 	return HALT;
 }
@@ -1571,15 +1568,14 @@ void CAdminMod::OnResetCommand(T* pObject, const CString& sLine, const std::vect
 }
 
 template <typename T, typename C>
-void CAdminMod::OnOtherCommand(T* pObject, const CString& sLine, const std::vector<C>& vCmds)
+void CAdminMod::OnExecCommand(T* pObject, const CString& sLine, const std::vector<C>& vCmds)
 {
 	const CString sCmd = sLine.Token(0);
 	const CString sArgs = sLine.Token(1, true);
 
 	for (const auto& Cmd : vCmds) {
 		if (Cmd.syntax.Token(0).Equals(sCmd)) {
-			if (Cmd.func(pObject, sArgs))
-				PutLine("Ok");
+			Cmd.exec(pObject, sArgs);
 			return;
 		}
 	}
