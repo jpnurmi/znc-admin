@@ -1662,6 +1662,34 @@ private:
 			}
 		},
 		{
+			"ListChans [filter]",
+			"Lists all channels of the network.",
+			[=](CIRCNetwork* pNetwork, const CString& sArgs) {
+				const CString sFilter = sArgs.Token(0);
+
+				CTable Table;
+				Table.AddColumn("Channel");
+				Table.AddColumn("Status");
+
+				for (const CChan* pChan : pNetwork->GetChans()) {
+					if (sFilter.empty() || pChan->GetName().WildCmp(sFilter, CString::CaseInsensitive)) {
+						Table.AddRow();
+						Table.SetCell("Channel", pChan->GetPermStr() + pChan->GetName());
+						Table.SetCell("Status", (pChan->IsOn() ? (pChan->IsDetached() ? "Detached" : "Joined") : (pChan->IsDisabled() ? "Disabled" : "Trying")));
+					}
+				}
+
+				if (Table.empty()) {
+					if (sFilter.empty())
+						PutLine("No channels");
+					else
+						PutLine("No matches for '" + sFilter + "'");
+				} else {
+					PutTable(Table);
+				}
+			}
+		},
+		{
 			"ListServers [filter]",
 			"Lists IRC servers of the network.",
 			[=](CIRCNetwork* pNetwork, const CString& sArgs) {
