@@ -445,9 +445,8 @@ static const std::vector<Variable<CUser>> UserVars = {
 			return CString(pTarget->GetChanBufferSize());
 		},
 		[](CUser* pModifier, CUser* pTarget, const CString& sVal, CString& sError) {
-			unsigned int i = sVal.ToUInt();
-			if (!pTarget->SetChanBufferSize(i, pTarget->IsAdmin())) {
-				sError = "Setting failed, limit is " + CString(CZNC::Get().GetMaxBufferSize());
+			if (!pTarget->SetChanBufferSize(sVal.ToUInt(), pModifier->IsAdmin())) {
+				sError = "exceeded limit " + CString(CZNC::Get().GetMaxBufferSize());
 				return false;
 			}
 			return true;
@@ -732,9 +731,8 @@ static const std::vector<Variable<CUser>> UserVars = {
 			return CString(pTarget->GetQueryBufferSize());
 		},
 		[](CUser* pModifier, CUser* pTarget, const CString& sVal, CString& sError) {
-			unsigned int i = sVal.ToUInt();
-			if (!pTarget->SetQueryBufferSize(i, pTarget->IsAdmin())) {
-				sError = "Setting failed, limit is " + CString(CZNC::Get().GetMaxBufferSize());
+			if (!pTarget->SetQueryBufferSize(sVal.ToUInt(), pModifier->IsAdmin())) {
+				sError = "exceeded limit " + CString(CZNC::Get().GetMaxBufferSize());
 				return false;
 			}
 			return true;
@@ -1041,9 +1039,11 @@ static const std::vector<Variable<CChan>> ChanVars = {
 			return sVal;
 		},
 		[](CUser* pModifier, CChan* pTarget, const CString& sVal, CString& sError) {
-			if (!pTarget->SetBufferCount(sVal.ToUInt(), pTarget->GetNetwork()->GetUser()->IsAdmin()))
-				sError = "Setting failed, the limit is " + CString(CZNC::Get().GetMaxBufferSize());
-			return sError.empty();
+			if (!pTarget->SetBufferCount(sVal.ToUInt(), pModifier->IsAdmin())) {
+				sError = "exceeded limit " + CString(CZNC::Get().GetMaxBufferSize());
+				return false;
+			}
+			return true;
 		},
 		[](CUser* pModifier, CChan* pTarget, CString& sError) {
 			pTarget->ResetBufferCount();
