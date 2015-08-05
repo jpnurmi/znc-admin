@@ -44,6 +44,14 @@ struct Variable
 	std::function<bool(CUser*, T*, CString&)> resetter;
 };
 
+template <typename T>
+struct Command
+{
+	CString syntax;
+	CString description;
+	std::function<bool(CUser*, T*, const CString&, CString&)> func;
+};
+
 class CAdminMod : public CModule
 {
 public:
@@ -63,8 +71,8 @@ protected:
 	EModRet OnChanCommand(CChan* pChan, const CString& sTgt, const CString& sLine);
 
 private:
-	template <typename V>
-	void OnHelpCommand(const CString& sTgt, const CString& sLine, const std::vector<V>& vVars);
+	template <typename C>
+	void OnHelpCommand(const CString& sTgt, const CString& sLine, const std::vector<C>& vCmds);
 	template <typename T, typename V>
 	void OnListVarsCommand(T* pTarget, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars);
 	template <typename T, typename V>
@@ -73,8 +81,11 @@ private:
 	void OnSetCommand(T* pTarget, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars);
 	template <typename T, typename V>
 	void OnResetCommand(T* pTarget, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars);
+	template <typename T, typename C>
+	void OnOtherCommand(T* pTarget, const CString& sTgt, const CString& sLine, const std::vector<C>& vCmds);
 
-	CTable FilterCmdTable(const CString& sFilter) const;
+	template <typename C>
+	CTable FilterCmdTable(const std::vector<C>& vCmds, const CString& sFilter) const;
 	template <typename V>
 	CTable FilterVarTable(const std::vector<V>& vVars, const CString& sFilter) const;
 
@@ -1133,6 +1144,49 @@ static const std::vector<Variable<CChan>> ChanVars = {
 	},
 };
 
+static const std::vector<Command<CZNC>> GlobalCmds = {
+	{
+		"AddUser <username> <password>",
+		"Adds a new user.",
+		[](CUser* pModifier, CZNC* pTarget, const CString& sArgs, CString& sError) {
+			if (!pModifier->IsAdmin()) {
+				sError = "access denied";
+				return false;
+			}
+
+			const CString sUsername = sArgs.Token(0);
+			const CString sPassword = sArgs.Token(1);
+			if (sPassword.empty())
+				return false;
+
+			if (pTarget->FindUser(sUsername)) {
+				sError = "already exists";
+				return false;
+			}
+
+			CUser* pUser = new CUser(sUsername);
+			CString sSalt = CUtils::GetSalt();
+			pUser->SetPass(CUser::SaltedHash(sPassword, sSalt), CUser::HASH_DEFAULT, sSalt);
+
+			if (!CZNC::Get().AddUser(pUser, sError)) {
+				delete pUser;
+				return false;
+			}
+
+			return true;
+		}
+	},
+};
+
+static const std::vector<Command<CUser>> UserCmds = {
+};
+
+static const std::vector<Command<CIRCNetwork>> NetworkCmds = {
+};
+
+static const std::vector<Command<CChan>> ChanCmds = {
+};
+
 CString CAdminMod::GetInfix() const
 {
 	CString sInfix = GetNV("infix");
@@ -1158,7 +1212,7 @@ void CAdminMod::OnModCommand(const CString& sLine)
 	if (sCmd.Equals("Help")) {
 		const CString sFilter = sLine.Token(1);
 
-		const CTable Table = FilterCmdTable(sFilter);
+		const CTable Table = FilterCmdTable(GlobalCmds, sFilter);
 		if (!Table.empty())
 			PutModule(Table);
 		else if (!sFilter.empty())
@@ -1200,7 +1254,7 @@ void CAdminMod::OnModCommand(const CString& sLine)
 	} else if (sCmd.Equals("Reset")) {
 		OnResetCommand(&CZNC::Get(), GetModName(), sLine, GlobalVars);
 	} else {
-		PutError(GetModName(), "unknown command");
+		OnOtherCommand(&CZNC::Get(), GetModName(), sLine, GlobalCmds);
 	}
 }
 
@@ -1301,7 +1355,7 @@ CModule::EModRet CAdminMod::OnUserCommand(CUser* pUser, const CString& sTgt, con
 	}
 
 	if (sCmd.Equals("Help"))
-		OnHelpCommand(sTgt, sLine, UserVars);
+		OnHelpCommand(sTgt, sLine, UserCmds);
 	else if (sCmd.Equals("ListVars"))
 		OnListVarsCommand(pUser, sTgt, sLine, UserVars);
 	else if (sCmd.Equals("Get"))
@@ -1326,7 +1380,7 @@ CModule::EModRet CAdminMod::OnNetworkCommand(CIRCNetwork* pNetwork, const CStrin
 	}
 
 	if (sCmd.Equals("Help"))
-		OnHelpCommand(sTgt, sLine, NetworkVars);
+		OnHelpCommand(sTgt, sLine, NetworkCmds);
 	else if (sCmd.Equals("ListVars"))
 		OnListVarsCommand(pNetwork, sTgt, sLine, NetworkVars);
 	else if (sCmd.Equals("Get"))
@@ -1351,7 +1405,7 @@ CModule::EModRet CAdminMod::OnChanCommand(CChan* pChan, const CString& sTgt, con
 	}
 
 	if (sCmd.Equals("Help"))
-		OnHelpCommand(sTgt, sLine, ChanVars);
+		OnHelpCommand(sTgt, sLine, ChanCmds);
 	else if (sCmd.Equals("ListVars"))
 		OnListVarsCommand(pChan, sTgt, sLine, ChanVars);
 	else if (sCmd.Equals("Get"))
@@ -1366,12 +1420,12 @@ CModule::EModRet CAdminMod::OnChanCommand(CChan* pChan, const CString& sTgt, con
 	return HALT;
 }
 
-template <typename V>
-void CAdminMod::OnHelpCommand(const CString& sTgt, const CString& sLine, const std::vector<V>& vVars)
+template <typename C>
+void CAdminMod::OnHelpCommand(const CString& sTgt, const CString& sLine, const std::vector<C>& vCmds)
 {
 	const CString sFilter = sLine.Token(1);
 
-	const CTable Table = FilterCmdTable(sFilter);
+	const CTable Table = FilterCmdTable(vCmds, sFilter);
 	if (!Table.empty())
 		PutTable(sTgt, Table);
 	else
@@ -1490,7 +1544,32 @@ void CAdminMod::OnResetCommand(T* pTarget, const CString& sTgt, const CString& s
 		PutError(sTgt, "unknown variable");
 }
 
-CTable CAdminMod::FilterCmdTable(const CString& sFilter) const
+template <typename T, typename C>
+void CAdminMod::OnOtherCommand(T* pTarget, const CString& sTgt, const CString& sLine, const std::vector<C>& vCmds)
+{
+	const CString sCmd = sLine.Token(0);
+	const CString sArgs = sLine.Token(1, true);
+
+	for (const auto& Cmd : vCmds) {
+		if (Cmd.syntax.Token(0).Equals(sCmd)) {
+			CString sError;
+			if (!Cmd.func(GetUser(), pTarget, sArgs, sError)) {
+				if (sError.empty())
+					PutLine(sTgt, "Usage: " + Cmd.syntax);
+				else
+					PutError(sTgt, sError);
+			} else {
+				PutLine(sTgt, "Ok");
+			}
+			return;
+		}
+	}
+
+	PutError(sTgt, "unknown command");
+}
+
+template <typename C>
+CTable CAdminMod::FilterCmdTable(const std::vector<C>& vCmds, const CString& sFilter) const
 {
 	CTable Table;
 	Table.AddColumn("Command");
@@ -1524,6 +1603,15 @@ CTable CAdminMod::FilterCmdTable(const CString& sFilter) const
 		Table.AddRow();
 		Table.SetCell("Command", "Reset <variable> <value>");
 		Table.SetCell("Description", "Resets the value(s) of a variable.");
+	}
+
+	for (const auto& Cmd : vCmds) {
+		const CString sCmd =  Cmd.syntax.Token(0);
+		if (sFilter.empty() || sCmd.StartsWith(sFilter) || sCmd.WildCmp(sFilter, CString::CaseInsensitive)) {
+			Table.AddRow();
+			Table.SetCell("Command", Cmd.syntax);
+			Table.SetCell("Description", Cmd.description);
+		}
 	}
 
 	return Table;
