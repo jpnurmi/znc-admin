@@ -1484,6 +1484,36 @@ private:
 
 	const std::vector<Command<CUser>> UserCmds = {
 		{
+			"ListClients [filter]",
+			"Lists connected user clients.",
+			[=](CUser* pUser, const CString& sArgs) {
+				const CString sFilter = sArgs.Token(1);
+
+				CTable Table;
+				Table.AddColumn("Host");
+				Table.AddColumn("Name");
+
+				for (const CClient* pClient : pUser->GetAllClients()) {
+					if (sFilter.empty()
+							|| !pClient->GetRemoteIP().WildCmp(sFilter, CString::CaseInsensitive)
+							|| !pClient->GetFullName().WildCmp(sFilter, CString::CaseInsensitive)) {
+						Table.AddRow();
+						Table.SetCell("Host", pClient->GetRemoteIP());
+						Table.SetCell("Name", pClient->GetFullName());
+					}
+				}
+
+				if (Table.empty()) {
+					if (sFilter.empty())
+						PutLine("No connected clients");
+					else
+						PutLine("No matches for '" + sFilter + "'");
+				} else {
+					PutTable(Table);
+				}
+			}
+		},
+		{
 			"ListMods [filter]",
 			"Lists user modules.",
 			[=](CUser* pUser, const CString& sArgs) {
