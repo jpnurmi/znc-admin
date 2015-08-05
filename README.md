@@ -6,7 +6,8 @@ to remember IRC interface to ZNC administration.
 
 ### Notes
 - The module is experimental. It may or may not work as expected.
-- The module requires the latest development version (1.7.x) of ZNC.
+- The module currently requires the admin branch of [jpnurmi/znc]
+  (https://github.com/jpnurmi/znc/commits/admin).
 
 ### Usage
 
