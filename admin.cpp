@@ -1176,6 +1176,34 @@ static const std::vector<Command<CZNC>> GlobalCmds = {
 			return true;
 		}
 	},
+	{
+		"DelUser <username>",
+		"Deletes a user.",
+		[](CUser* pModifier, CZNC* pTarget, const CString& sArgs, CString& sError) {
+			if (!pModifier->IsAdmin()) {
+				sError = "access denied";
+				return false;
+			}
+
+			const CString sUsername = sArgs.Token(0);
+			if (sUsername.empty())
+				return false;
+
+			CUser *pUser = CZNC::Get().FindUser(sUsername);
+			if (!pUser) {
+				sError = "doesn't exist";
+				return false;
+			}
+
+			if (pModifier == pUser) {
+				sError = "access denied";
+				return false;
+			}
+
+			CZNC::Get().DeleteUser(pUser->GetUserName());
+			return true;
+		}
+	},
 };
 
 static const std::vector<Command<CUser>> UserCmds = {
