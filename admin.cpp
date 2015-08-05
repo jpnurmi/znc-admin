@@ -84,6 +84,15 @@ private:
 	template <typename T, typename C>
 	void OnExecCommand(T* pObject, const CString& sLine, const std::vector<C>& vCmds);
 
+	template <typename T>
+	void OnListModsCommand(T* pObject, const CString& sArgs, CModInfo::EModuleType eType);
+	template <typename T>
+	void OnLoadModCommand(T* pObject, const CString& sArgs, CModInfo::EModuleType eType);
+	template <typename T>
+	void OnReloadModCommand(T* pObject, const CString& sArgs);
+	template <typename T>
+	void OnUnloadModCommand(T* pObject, const CString& sArgs);
+
 	template <typename C>
 	CTable FilterCmdTable(const std::vector<C>& vCmds, const CString& sFilter) const;
 	template <typename V>
@@ -1295,31 +1304,7 @@ private:
 			"ListMods [filter]",
 			"Lists global modules.",
 			[=](CZNC* pZNC, const CString& sArgs) {
-				const CString sFilter = sArgs.Token(0);
-
-				std::set<CModInfo> sMods;
-				pZNC->GetModules().GetAvailableMods(sMods, CModInfo::GlobalModule);
-
-				CTable Table;
-				Table.AddColumn("Module");
-				Table.AddColumn("Description");
-
-				for (const CModInfo& Info : sMods) {
-					const CString& sName = Info.GetName();
-					if (sFilter.empty() || sName.StartsWith(sFilter) || sName.WildCmp(sFilter, CString::CaseInsensitive)) {
-						Table.AddRow();
-						if (pZNC->GetModules().FindModule(sName))
-							Table.SetCell("Module", sName + " (loaded)");
-						else
-							Table.SetCell("Module", sName);
-						Table.SetCell("Description", Info.GetDescription().Ellipsize(128));
-					}
-				}
-
-				if (Table.empty())
-					PutError("no matches for '" + sFilter + "'");
-				else
-					PutTable(Table);
+				OnListModsCommand(pZNC, sArgs, CModInfo::GlobalModule);
 			}
 		},
 		{
@@ -1401,20 +1386,7 @@ private:
 			"LoadMod <module> [args]",
 			"Loads a global module.",
 			[=](CZNC* pZNC, const CString& sArgs) {
-				const CString sMod = sArgs.Token(0);
-				if (sMod.empty()) {
-					PutUsage("LoadMod <module> [args]");
-					return;
-				}
-
-				CModInfo Info;
-				CString sError;
-				if (!pZNC->GetModules().GetModInfo(Info, sMod, sError))
-					PutError(sError);
-				else if (!pZNC->GetModules().LoadModule(sMod, sArgs.Token(1, true), CModInfo::GlobalModule, nullptr, nullptr, sError))
-					PutError(sError);
-				else
-					PutSuccess("module '" + sMod + "' loaded");
+				OnLoadModCommand(pZNC, sArgs, CModInfo::GlobalModule);
 			}
 		},
 		{
@@ -1432,20 +1404,7 @@ private:
 			"ReloadMod <module> [args]",
 			"Reloads a global module.",
 			[=](CZNC* pZNC, const CString& sArgs) {
-				const CString sMod = sArgs.Token(0);
-				if (sMod.empty()) {
-					PutUsage("ReloadMod <module> [args]");
-					return;
-				}
-
-				CModInfo Info;
-				CString sError;
-				if (!pZNC->GetModules().GetModInfo(Info, sMod, sError))
-					PutError(sError);
-				else if (!pZNC->GetModules().ReloadModule(sMod, sArgs.Token(1, true), nullptr, nullptr, sError))
-					PutError(sError);
-				else
-					PutSuccess("module '" + sMod + "' reloaded");
+				OnReloadModCommand(pZNC, sArgs);
 			}
 		},
 		{
@@ -1498,20 +1457,7 @@ private:
 			"UnloadMod <module> [args]",
 			"Unloads a global module.",
 			[=](CZNC* pZNC, const CString& sArgs) {
-				const CString sMod = sArgs.Token(0);
-				if (sMod.empty()) {
-					PutUsage("UnloadMod <module> [args]");
-					return;
-				}
-
-				CModInfo Info;
-				CString sError;
-				if (!pZNC->GetModules().GetModInfo(Info, sMod, sError))
-					PutError(sError);
-				else if (!pZNC->GetModules().UnloadModule(sMod, sError))
-					PutError(sError);
-				else
-					PutSuccess("module '" + sMod + "' unloaded");
+				OnUnloadModCommand(pZNC, sArgs);
 			}
 		},
 		{
@@ -1541,106 +1487,28 @@ private:
 			"ListMods [filter]",
 			"Lists user modules.",
 			[=](CUser* pUser, const CString& sArgs) {
-				const CString sFilter = sArgs.Token(0);
-
-				std::set<CModInfo> sMods;
-				pUser->GetModules().GetAvailableMods(sMods, CModInfo::UserModule);
-
-				CTable Table;
-				Table.AddColumn("Module");
-				Table.AddColumn("Description");
-
-				for (const CModInfo& Info : sMods) {
-					const CString& sName = Info.GetName();
-					if (sFilter.empty() || sName.StartsWith(sFilter) || sName.WildCmp(sFilter, CString::CaseInsensitive)) {
-						Table.AddRow();
-						if (pUser->GetModules().FindModule(sName))
-							Table.SetCell("Module", sName + " (loaded)");
-						else
-							Table.SetCell("Module", sName);
-						Table.SetCell("Description", Info.GetDescription().Ellipsize(128));
-					}
-				}
-
-				if (Table.empty())
-					PutError("no matches for '" + sFilter + "'");
-				else
-					PutTable(Table);
+				OnListModsCommand(pUser, sArgs, CModInfo::UserModule);
 			}
 		},
 		{
 			"LoadMod <module> [args]",
 			"Loads a user module.",
 			[=](CUser* pUser, const CString& sArgs) {
-				if (!GetUser()->IsAdmin() && GetUser()->DenyLoadMod()) {
-					PutError("access deniend");
-					return;
-				}
-
-				const CString sMod = sArgs.Token(0);
-				if (sMod.empty()) {
-					PutUsage("LoadMod <module> [args]");
-					return;
-				}
-
-				CModInfo Info;
-				CString sError;
-				if (!pUser->GetModules().GetModInfo(Info, sMod, sError))
-					PutError(sError);
-				else if (!pUser->GetModules().LoadModule(sMod, sArgs.Token(1, true), CModInfo::UserModule, nullptr, nullptr, sError))
-					PutError(sError);
-				else
-					PutSuccess("module '" + sMod + "' loaded");
+				OnLoadModCommand(pUser, sArgs, CModInfo::UserModule);
 			}
 		},
 		{
 			"ReloadMod <module> [args]",
 			"Reloads a user module.",
 			[=](CUser* pUser, const CString& sArgs) {
-				if (!GetUser()->IsAdmin() && GetUser()->DenyLoadMod()) {
-					PutError("access deniend");
-					return;
-				}
-
-				const CString sMod = sArgs.Token(0);
-				if (sMod.empty()) {
-					PutUsage("ReloadMod <module> [args]");
-					return;
-				}
-
-				CModInfo Info;
-				CString sError;
-				if (!pUser->GetModules().GetModInfo(Info, sMod, sError))
-					PutError(sError);
-				else if (!pUser->GetModules().ReloadModule(sMod, sArgs.Token(1, true), nullptr, nullptr, sError))
-					PutError(sError);
-				else
-					PutSuccess("module '" + sMod + "' reloaded");
+				OnReloadModCommand(pUser, sArgs);
 			}
 		},
 		{
 			"UnloadMod <module> [args]",
 			"Unloads a user module.",
 			[=](CUser* pUser, const CString& sArgs) {
-				if (!GetUser()->IsAdmin() && GetUser()->DenyLoadMod()) {
-					PutError("access deniend");
-					return;
-				}
-
-				const CString sMod = sArgs.Token(0);
-				if (sMod.empty()) {
-					PutUsage("UnloadMod <module> [args]");
-					return;
-				}
-
-				CModInfo Info;
-				CString sError;
-				if (!pUser->GetModules().GetModInfo(Info, sMod, sError))
-					PutError(sError);
-				else if (!pUser->GetModules().UnloadModule(sMod, sError))
-					PutError(sError);
-				else
-					PutSuccess("module '" + sMod + "' unloaded");
+				OnUnloadModCommand(pUser, sArgs);
 			}
 		},
 	};
@@ -2022,6 +1890,108 @@ void CAdminMod::OnExecCommand(T* pObject, const CString& sLine, const std::vecto
 	}
 
 	PutError("unknown command");
+}
+
+template <typename T>
+void CAdminMod::OnListModsCommand(T* pObject, const CString& sArgs, CModInfo::EModuleType eType)
+{
+	const CString sFilter = sArgs.Token(0);
+
+	std::set<CModInfo> sMods;
+	pObject->GetModules().GetAvailableMods(sMods, eType);
+
+	CTable Table;
+	Table.AddColumn("Module");
+	Table.AddColumn("Description");
+
+	for (const CModInfo& Info : sMods) {
+		const CString& sName = Info.GetName();
+		if (sFilter.empty() || sName.StartsWith(sFilter) || sName.WildCmp(sFilter, CString::CaseInsensitive)) {
+			Table.AddRow();
+			if (pObject->GetModules().FindModule(sName))
+				Table.SetCell("Module", sName + " (loaded)");
+			else
+				Table.SetCell("Module", sName);
+			Table.SetCell("Description", Info.GetDescription().Ellipsize(128));
+		}
+	}
+
+	if (Table.empty())
+		PutError("no matches for '" + sFilter + "'");
+	else
+		PutTable(Table);
+}
+
+template <typename T>
+void CAdminMod::OnLoadModCommand(T* pObject, const CString& sArgs, CModInfo::EModuleType eType)
+{
+	if (!GetUser()->IsAdmin() && GetUser()->DenyLoadMod()) {
+		PutError("access deniend");
+		return;
+	}
+
+	const CString sMod = sArgs.Token(0);
+	if (sMod.empty()) {
+		PutUsage("LoadMod <module> [args]");
+		return;
+	}
+
+	CModInfo Info;
+	CString sError;
+	if (!pObject->GetModules().GetModInfo(Info, sMod, sError))
+		PutError(sError);
+	else if (!pObject->GetModules().LoadModule(sMod, sArgs.Token(1, true), eType, nullptr, nullptr, sError))
+		PutError(sError);
+	else
+		PutSuccess("module '" + sMod + "' loaded");
+}
+
+template <typename T>
+void CAdminMod::OnReloadModCommand(T* pObject, const CString& sArgs)
+{
+	if (!GetUser()->IsAdmin() && GetUser()->DenyLoadMod()) {
+		PutError("access deniend");
+		return;
+	}
+
+	const CString sMod = sArgs.Token(0);
+	if (sMod.empty()) {
+		PutUsage("ReloadMod <module> [args]");
+		return;
+	}
+
+	CModInfo Info;
+	CString sError;
+	if (!pObject->GetModules().GetModInfo(Info, sMod, sError))
+		PutError(sError);
+	else if (!pObject->GetModules().ReloadModule(sMod, sArgs.Token(1, true), nullptr, nullptr, sError))
+		PutError(sError);
+	else
+		PutSuccess("module '" + sMod + "' reloaded");
+}
+
+template <typename T>
+void CAdminMod::OnUnloadModCommand(T* pObject, const CString& sArgs)
+{
+	if (!GetUser()->IsAdmin() && GetUser()->DenyLoadMod()) {
+		PutError("access deniend");
+		return;
+	}
+
+	const CString sMod = sArgs.Token(0);
+	if (sMod.empty()) {
+		PutUsage("UnloadMod <module> [args]");
+		return;
+	}
+
+	CModInfo Info;
+	CString sError;
+	if (!pObject->GetModules().GetModInfo(Info, sMod, sError))
+		PutError(sError);
+	else if (!pObject->GetModules().UnloadModule(sMod, sError))
+		PutError(sError);
+	else
+		PutSuccess("module '" + sMod + "' unloaded");
 }
 
 template <typename C>
