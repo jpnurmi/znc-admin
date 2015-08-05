@@ -1484,6 +1484,50 @@ private:
 
 	const std::vector<Command<CUser>> UserCmds = {
 		{
+			"AddNetwork <name>",
+			"Adds a network.",
+			[=](CUser* pUser, const CString& sArgs) {
+				if (!GetUser()->IsAdmin() && !pUser->HasSpaceForNewNetwork()) {
+					PutError("exceeded limit " + CString(pUser->MaxNetworks()));
+					return;
+				}
+
+				const CString sNetwork = sArgs.Token(0);
+
+				if (sNetwork.empty()) {
+					PutUsage("AddNetwork <name>");
+					return;
+				}
+				if (!CIRCNetwork::IsValidNetwork(sNetwork)) {
+					PutError("invalid name (must be alphanumeric)");
+					return;
+				}
+
+				CString sError;
+				if (pUser->AddNetwork(sNetwork, sError))
+					PutSuccess("network added. Use /znc Jump " + sNetwork + ", or connect to ZNC with username " + pUser->GetUserName() + "/" + sNetwork + " (instead of just " + pUser->GetUserName() + ") to connect to it.");
+				else
+					PutError(sError);
+			}
+		},
+		{
+			"DelNetwork <name>",
+			"Deletes a network.",
+			[=](CUser* pUser, const CString& sArgs) {
+				const CString sNetwork = sArgs.Token(0);
+
+				if (sNetwork.empty()) {
+					PutUsage("DelNetwork <name>");
+					return;
+				}
+
+				if (pUser->DeleteNetwork(sNetwork))
+					PutSuccess("network '" + sNetwork + "' deleted");
+				else
+					PutError("unknown network");
+			}
+		},
+		{
 			"ListClients [filter]",
 			"Lists connected user clients.",
 			[=](CUser* pUser, const CString& sArgs) {
@@ -1518,6 +1562,34 @@ private:
 			"Lists user modules.",
 			[=](CUser* pUser, const CString& sArgs) {
 				OnListModsCommand(pUser, sArgs, CModInfo::UserModule);
+			}
+		},
+		{
+			"ListNetworks [filter]",
+			"Lists user networks.",
+			[=](CUser* pUser, const CString& sArgs) {
+				const CString sFilter = sArgs.Token(0);
+
+				CTable Table;
+				Table.AddColumn("Network");
+				Table.AddColumn("Status");
+
+				for (const CIRCNetwork* pNetwork : pUser->GetNetworks()) {
+					if (sFilter.empty() || pNetwork->GetName().WildCmp(sFilter, CString::CaseInsensitive)) {
+						Table.AddRow();
+						Table.SetCell("Network", pNetwork->GetName());
+						Table.SetCell("Status", pNetwork->IsIRCConnected() ? "Online" : (pNetwork->GetIRCConnectEnabled() ? "Offline" : "Disabled"));
+					}
+				}
+
+				if (Table.empty()) {
+					if (sFilter.empty())
+						PutLine("No networks");
+					else
+						PutLine("No matches for '" + sFilter + "'");
+				} else {
+					PutTable(Table);
+				}
 			}
 		},
 		{
