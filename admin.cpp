@@ -1610,6 +1610,21 @@ private:
 			}
 		},
 		{
+			"Traffic",
+			"Shows the amount of user specific traffic.",
+			[=](CUser* pUser, const CString& sArgs) {
+				CTable Table;
+				Table.AddColumn("Read");
+				Table.AddColumn("Written");
+				Table.AddColumn("Total");
+				Table.AddRow();
+				Table.SetCell("Read", CString::ToByteStr(pUser->BytesRead()));
+				Table.SetCell("Written", CString::ToByteStr(pUser->BytesWritten()));
+				Table.SetCell("Total", CString::ToByteStr(pUser->BytesRead() + pUser->BytesWritten()));
+				PutTable(Table);
+			}
+		},
+		{
 			"UnloadMod <module> [args]",
 			"Unloads a user module.",
 			[=](CUser* pUser, const CString& sArgs) {
@@ -1774,6 +1789,21 @@ private:
 			"Reloads a network module.",
 			[=](CIRCNetwork* pNetwork, const CString& sArgs) {
 				OnReloadModCommand(pNetwork, sArgs);
+			}
+		},
+		{
+			"Traffic",
+			"Shows the amount of network specific traffic.",
+			[=](CIRCNetwork* pNetwork, const CString& sArgs) {
+				CTable Table;
+				Table.AddColumn("Read");
+				Table.AddColumn("Written");
+				Table.AddColumn("Total");
+				Table.AddRow();
+				Table.SetCell("Read", CString::ToByteStr(pNetwork->BytesRead()));
+				Table.SetCell("Written", CString::ToByteStr(pNetwork->BytesWritten()));
+				Table.SetCell("Total", CString::ToByteStr(pNetwork->BytesRead() + pNetwork->BytesWritten()));
+				PutTable(Table);
 			}
 		},
 		{
