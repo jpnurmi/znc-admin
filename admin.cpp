@@ -17,6 +17,8 @@
 #include <znc/Modules.h>
 #include <znc/User.h>
 #include <znc/IRCNetwork.h>
+#include <znc/Listener.h>
+#include <znc/Server.h>
 #include <znc/Chan.h>
 #include <znc/znc.h>
 #include <functional>
@@ -1617,10 +1619,72 @@ private:
 
 	const std::vector<Command<CIRCNetwork>> NetworkCmds = {
 		{
+			"AddServer <host> [[+]port] [pass]",
+			"Adds an IRC server.",
+			[=](CIRCNetwork* pNetwork, const CString& sArgs) {
+				if (sArgs.empty()) {
+					PutUsage("AddServer <host> [[+]port] [pass]");
+					return;
+				}
+
+				if (pNetwork->AddServer(sArgs))
+					PutSuccess("server added");
+				else
+					PutError("duplicate or invalid entry");
+			}
+		},
+		{
+			"DelServer <host> [[+]port] [pass]",
+			"Deletes an IRC server.",
+			[=](CIRCNetwork* pNetwork, const CString& sArgs) {
+				if (sArgs.empty()) {
+					PutUsage("DelServer <host> [[+]port] [pass]");
+					return;
+				}
+
+				const CString sHost = sArgs.Token(0);
+				const unsigned short uPort = sArgs.Token(1).ToUShort();
+				const CString sPass = sArgs.Token(2);
+
+				if (!pNetwork->HasServers())
+					PutError("no servers");
+				else if (pNetwork->DelServer(sHost, uPort, sPass))
+					PutSuccess("server deleted");
+				else
+					PutError("no such server");
+			}
+		},
+		{
 			"ListMods [filter]",
 			"Lists network modules.",
 			[=](CIRCNetwork* pNetwork, const CString& sArgs) {
 				OnListModsCommand(pNetwork, sArgs, CModInfo::NetworkModule);
+			}
+		},
+		{
+			"ListServers [filter]",
+			"Lists IRC servers of the network.",
+			[=](CIRCNetwork* pNetwork, const CString& sArgs) {
+				const CString sFilter = sArgs.Token(0);
+
+				CTable Table;
+				Table.AddColumn("Server");
+
+				for (const CServer* pServer : pNetwork->GetServers()) {
+					if (sFilter.empty() || pServer->GetName().WildCmp(sFilter, CString::CaseInsensitive)) {
+						Table.AddRow();
+						Table.SetCell("Server", pServer->GetName() + ":" + (pServer->IsSSL() ? "+" : "") + CString(pServer->GetPort()) + (pServer == pNetwork->GetCurrentServer() ? " (current)" : ""));
+					}
+				}
+
+				if (Table.empty()) {
+					if (sFilter.empty())
+						PutLine("No servers");
+					else
+						PutLine("No matches for '" + sFilter + "'");
+				} else {
+					PutTable(Table);
+				}
 			}
 		},
 		{
