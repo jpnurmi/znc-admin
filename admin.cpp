@@ -89,6 +89,7 @@ private:
 	template <typename V>
 	CTable FilterVarTable(const std::vector<V>& vVars, const CString& sFilter) const;
 
+	void PutSuccess(const CString& sLine, const CString& sTarget = "");
 	void PutUsage(const CString& sSyntax, const CString& sTarget = "");
 	void PutError(const CString& sLine, const CString& sTarget = "");
 	void PutLine(const CString& sLine, const CString& sTarget = "");
@@ -1153,17 +1154,20 @@ private:
 					return;
 				}
 
-				if (pZNC->FindUser(sUsername)) {
-					PutError("already exists");
+				CUser* pUser = pZNC->FindUser(sUsername);
+				if (pUser) {
+					PutError("user '" + pUser->GetUserName() + "' already exists");
 					return;
 				}
 
-				CUser* pUser = new CUser(sUsername);
+				pUser = new CUser(sUsername);
 				CString sSalt = CUtils::GetSalt();
 				pUser->SetPass(CUser::SaltedHash(sPassword, sSalt), CUser::HASH_DEFAULT, sSalt);
 
 				CString sError;
-				if (!pZNC->AddUser(pUser, sError)) {
+				if (pZNC->AddUser(pUser, sError)) {
+					PutSuccess("user '" + pUser->GetUserName() + "' added");
+				} else {
 					PutError(sError);
 					delete pUser;
 				}
@@ -1186,7 +1190,7 @@ private:
 
 				CUser *pUser = pZNC->FindUser(sUsername);
 				if (!pUser) {
-					PutError("doesn't exist");
+					PutError("user '" + sUsername + "' doesn't exist");
 					return;
 				}
 
@@ -1195,8 +1199,11 @@ private:
 					return;
 				}
 
-				if (!pZNC->DeleteUser(pUser->GetUserName()))
+				if (pZNC->DeleteUser(pUser->GetUserName())) {
+					PutSuccess("user '" + pUser->GetUserName() + "' deleted");
+				} else {
 					PutError("internal error");
+				}
 			}
 		},
 		{
@@ -1673,6 +1680,11 @@ CTable CAdminMod::FilterVarTable(const std::vector<V>& vVars, const CString& sFi
 	}
 
 	return Table;
+}
+
+void CAdminMod::PutSuccess(const CString& sLine, const CString& sTarget)
+{
+	PutLine("Success: " + sLine, sTarget);
 }
 
 void CAdminMod::PutUsage(const CString& sSyntax, const CString& sTarget)
