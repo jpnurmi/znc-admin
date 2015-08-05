@@ -89,6 +89,7 @@ private:
 	template <typename V>
 	CTable FilterVarTable(const std::vector<V>& vVars, const CString& sFilter) const;
 
+	void PutUsage(const CString& sSyntax, const CString& sTarget = "");
 	void PutError(const CString& sLine, const CString& sTarget = "");
 	void PutLine(const CString& sLine, const CString& sTarget = "");
 	void PutTable(const CTable& Table, const CString& sTarget = "");
@@ -1147,8 +1148,10 @@ private:
 
 				const CString sUsername = sArgs.Token(0);
 				const CString sPassword = sArgs.Token(1);
-				if (sPassword.empty())
+				if (sPassword.empty()) {
+					PutUsage("AddUser <username> <password>");
 					return false;
+				}
 
 				if (pObject->FindUser(sUsername)) {
 					PutError("already exists");
@@ -1179,8 +1182,10 @@ private:
 				}
 
 				const CString sUsername = sArgs.Token(0);
-				if (sUsername.empty())
+				if (sUsername.empty()) {
+					PutUsage("DelUser <username>");
 					return false;
+				}
 
 				CUser *pUser = CZNC::Get().FindUser(sUsername);
 				if (!pUser) {
@@ -1477,7 +1482,7 @@ void CAdminMod::OnGetCommand(T* pObject, const CString& sLine, const std::vector
 	const CString sVar = sLine.Token(1);
 
 	if (sVar.empty()) {
-		PutLine("Usage: Get <variable>");
+		PutUsage("Get <variable>");
 		return;
 	}
 
@@ -1507,7 +1512,7 @@ void CAdminMod::OnSetCommand(T* pObject, const CString& sLine, const std::vector
 	const CString sVal = sLine.Token(2, true);
 
 	if (sVar.empty() || sVal.empty()) {
-		PutLine("Usage: Set <variable> <value>");
+		PutUsage("Set <variable> <value>");
 		return;
 	}
 
@@ -1538,7 +1543,7 @@ void CAdminMod::OnResetCommand(T* pObject, const CString& sLine, const std::vect
 	const CString sVar = sLine.Token(1);
 
 	if (sVar.empty()) {
-		PutLine("Usage: Reset <variable>");
+		PutUsage("Reset <variable>");
 		return;
 	}
 
@@ -1648,6 +1653,11 @@ CTable CAdminMod::FilterVarTable(const std::vector<V>& vVars, const CString& sFi
 	}
 
 	return Table;
+}
+
+void CAdminMod::PutUsage(const CString& sSyntax, const CString& sTarget)
+{
+	PutLine("Usage: " + sSyntax, sTarget);
 }
 
 void CAdminMod::PutError(const CString& sError, const CString& sTarget)
