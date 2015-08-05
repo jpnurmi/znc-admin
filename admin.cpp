@@ -1514,6 +1514,34 @@ private:
 	};
 
 	const std::vector<Command<CIRCNetwork>> NetworkCmds = {
+		{
+			"ListMods [filter]",
+			"Lists network modules.",
+			[=](CIRCNetwork* pNetwork, const CString& sArgs) {
+				OnListModsCommand(pNetwork, sArgs, CModInfo::NetworkModule);
+			}
+		},
+		{
+			"LoadMod <module> [args]",
+			"Loads a network module.",
+			[=](CIRCNetwork* pNetwork, const CString& sArgs) {
+				OnLoadModCommand(pNetwork, sArgs, CModInfo::NetworkModule);
+			}
+		},
+		{
+			"ReloadMod <module> [args]",
+			"Reloads a network module.",
+			[=](CIRCNetwork* pNetwork, const CString& sArgs) {
+				OnReloadModCommand(pNetwork, sArgs);
+			}
+		},
+		{
+			"UnloadMod <module> [args]",
+			"Unloads a network module.",
+			[=](CIRCNetwork* pNetwork, const CString& sArgs) {
+				OnUnloadModCommand(pNetwork, sArgs);
+			}
+		},
 	};
 
 	const std::vector<Command<CChan>> ChanCmds = {
