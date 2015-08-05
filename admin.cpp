@@ -66,32 +66,34 @@ public:
 	void SetInfix(const CString& sInfix);
 
 protected:
-	EModRet OnUserCommand(CUser* pUser, const CString& sTgt, const CString& sLine);
-	EModRet OnNetworkCommand(CIRCNetwork* pNetwork, const CString& sTgt, const CString& sLine);
-	EModRet OnChanCommand(CChan* pChan, const CString& sTgt, const CString& sLine);
+	EModRet OnUserCommand(CUser* pUser, const CString& sLine);
+	EModRet OnNetworkCommand(CIRCNetwork* pNetwork, const CString& sLine);
+	EModRet OnChanCommand(CChan* pChan, const CString& sLine);
 
 private:
 	template <typename C>
-	void OnHelpCommand(const CString& sTgt, const CString& sLine, const std::vector<C>& vCmds);
+	void OnHelpCommand(const CString& sLine, const std::vector<C>& vCmds);
 	template <typename T, typename V>
-	void OnListVarsCommand(T* pObject, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars);
+	void OnListVarsCommand(T* pObject, const CString& sLine, const std::vector<V>& vVars);
 	template <typename T, typename V>
-	void OnGetCommand(T* pObject, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars);
+	void OnGetCommand(T* pObject, const CString& sLine, const std::vector<V>& vVars);
 	template <typename T, typename V>
-	void OnSetCommand(T* pObject, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars);
+	void OnSetCommand(T* pObject, const CString& sLine, const std::vector<V>& vVars);
 	template <typename T, typename V>
-	void OnResetCommand(T* pObject, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars);
+	void OnResetCommand(T* pObject, const CString& sLine, const std::vector<V>& vVars);
 	template <typename T, typename C>
-	void OnOtherCommand(T* pObject, const CString& sTgt, const CString& sLine, const std::vector<C>& vCmds);
+	void OnOtherCommand(T* pObject, const CString& sLine, const std::vector<C>& vCmds);
 
 	template <typename C>
 	CTable FilterCmdTable(const std::vector<C>& vCmds, const CString& sFilter) const;
 	template <typename V>
 	CTable FilterVarTable(const std::vector<V>& vVars, const CString& sFilter) const;
 
-	void PutError(const CString& sTgt, const CString& sLine);
-	void PutLine(const CString& sTgt, const CString& sLine);
-	void PutTable(const CString& sTgt, const CTable& Table);
+	void PutError(const CString& sLine, const CString& sTarget = "");
+	void PutLine(const CString& sLine, const CString& sTarget = "");
+	void PutTable(const CTable& Table, const CString& sTarget = "");
+
+	CString m_sTarget;
 };
 
 // TODO: expose the default constants needed by the reset methods?
@@ -1232,8 +1234,10 @@ void CAdminMod::OnModCommand(const CString& sLine)
 {
 	const CString sCmd = sLine.Token(0);
 
+	m_sTarget = GetModName();
+
 	if (!GetUser()->IsAdmin() && (sCmd.Equals("Set") || sCmd.Equals("Reset"))) {
-		PutError(GetModName(), "access denied.");
+		PutError("access denied.");
 		return;
 	}
 
@@ -1274,15 +1278,15 @@ void CAdminMod::OnModCommand(const CString& sLine)
 			PutModule("- channel settings of another network of another user: /msg " + sPfx + "somebody/freenode/#znc help");
 		}
 	} else if (sCmd.Equals("ListVars")) {
-		OnListVarsCommand(&CZNC::Get(), GetModName(), sLine, GlobalVars);
+		OnListVarsCommand(&CZNC::Get(), sLine, GlobalVars);
 	} else if (sCmd.Equals("Get")) {
-		OnGetCommand(&CZNC::Get(), GetModName(), sLine, GlobalVars);
+		OnGetCommand(&CZNC::Get(), sLine, GlobalVars);
 	} else if (sCmd.Equals("Set")) {
-		OnSetCommand(&CZNC::Get(), GetModName(), sLine, GlobalVars);
+		OnSetCommand(&CZNC::Get(), sLine, GlobalVars);
 	} else if (sCmd.Equals("Reset")) {
-		OnResetCommand(&CZNC::Get(), GetModName(), sLine, GlobalVars);
+		OnResetCommand(&CZNC::Get(), sLine, GlobalVars);
 	} else {
-		OnOtherCommand(&CZNC::Get(), GetModName(), sLine, GlobalCmds);
+		OnOtherCommand(&CZNC::Get(), sLine, GlobalCmds);
 	}
 }
 
@@ -1297,58 +1301,60 @@ CModule::EModRet CAdminMod::OnUserRaw(CString& sLine)
 	const CString sCmd = sCopy.Token(0);
 
 	if (sCmd.Equals("ZNC") || sCmd.Equals("PRIVMSG")) {
-		CString sTgt = sCopy.Token(1);
-		const CString sRest = sCopy.Token(2, true).TrimPrefix_n(":");
-		const CString sPfx = GetInfix();
+		CString sTarget = sCopy.Token(1);
+		if (sTarget.TrimPrefix(GetUser()->GetStatusPrefix() + GetInfix())) {
+			const CString sRest = sCopy.Token(2, true).TrimPrefix_n(":");
+			const CString sPfx = GetInfix();
 
-		if (sTgt.TrimPrefix(GetUser()->GetStatusPrefix() + sPfx)) {
+			m_sTarget = GetInfix() + sTarget;
+
 			// <user>
-			if (sTgt.Equals("user"))
-				return OnUserCommand(GetUser(), sPfx + sTgt, sRest);
-			if (CUser* pUser = CZNC::Get().FindUser(sTgt))
-				return OnUserCommand(pUser, sPfx + sTgt, sRest);
+			if (sTarget.Equals("user"))
+				return OnUserCommand(GetUser(), sRest);
+			if (CUser* pUser = CZNC::Get().FindUser(sTarget))
+				return OnUserCommand(pUser, sRest);
 
 			// <network>
-			if (sTgt.Equals("network") && GetNetwork())
-				return OnNetworkCommand(GetNetwork(), sPfx + sTgt, sRest);
-			if (CIRCNetwork* pNetwork = GetUser()->FindNetwork(sTgt))
-				return OnNetworkCommand(pNetwork, sPfx + sTgt, sRest);
+			if (sTarget.Equals("network") && GetNetwork())
+				return OnNetworkCommand(GetNetwork(), sRest);
+			if (CIRCNetwork* pNetwork = GetUser()->FindNetwork(sTarget))
+				return OnNetworkCommand(pNetwork, sRest);
 
 			// <#chan>
-			if (CChan* pChan = GetNetwork() ? GetNetwork()->FindChan(sTgt) : nullptr)
-				return OnChanCommand(pChan, sPfx + sTgt, sRest);
+			if (CChan* pChan = GetNetwork() ? GetNetwork()->FindChan(sTarget) : nullptr)
+				return OnChanCommand(pChan, sRest);
 
 			VCString vsParts;
-			sTgt.Split("/", vsParts, false);
+			sTarget.Split("/", vsParts, false);
 			if (vsParts.size() == 2) {
 				// <user/network>
 				if (CUser* pUser = CZNC::Get().FindUser(vsParts[0])) {
 					if (CIRCNetwork* pNetwork = pUser->FindNetwork(vsParts[1])) {
-						return OnNetworkCommand(pNetwork, sPfx + sTgt, sRest);
+						return OnNetworkCommand(pNetwork, sRest);
 					} else {
 						// <user/#chan>
 						if (pUser == GetUser()) {
 							if (CIRCNetwork* pUserNetwork = GetNetwork()) {
 								if (CChan* pChan = pUserNetwork->FindChan(vsParts[1]))
-									return OnChanCommand(pChan, sPfx + sTgt, sRest);
+									return OnChanCommand(pChan, sRest);
 							}
 						}
 						if (pUser->GetNetworks().size() == 1) {
 							if (CIRCNetwork* pFirstNetwork = pUser->GetNetworks().front()) {
 								if (CChan* pChan = pFirstNetwork->FindChan(vsParts[1]))
-									return OnChanCommand(pChan, sPfx + sTgt, sRest);
+									return OnChanCommand(pChan, sRest);
 							}
 						}
 					}
-					PutError(sPfx + sTgt, "unknown (or ambiguous) network or channel");
+					PutError("unknown (or ambiguous) network or channel");
 					return HALT;
 				}
 				// <network/#chan>
 				if (CIRCNetwork* pNetwork = GetUser()->FindNetwork(vsParts[0])) {
 					if (CChan* pChan = pNetwork->FindChan(vsParts[1])) {
-						return OnChanCommand(pChan, sPfx + sTgt, sRest);
+						return OnChanCommand(pChan, sRest);
 					} else {
-						PutError(sPfx + sTgt, "unknown channel");
+						PutError("unknown channel");
 						return HALT;
 					}
 				}
@@ -1357,13 +1363,13 @@ CModule::EModRet CAdminMod::OnUserRaw(CString& sLine)
 				if (CUser* pUser = CZNC::Get().FindUser(vsParts[0])) {
 					if (CIRCNetwork* pNetwork = pUser->FindNetwork(vsParts[1])) {
 						if (CChan* pChan = pNetwork->FindChan(vsParts[2])) {
-							return OnChanCommand(pChan, sPfx + sTgt, sRest);
+							return OnChanCommand(pChan, sRest);
 						} else {
-							PutError(sPfx + sTgt, "unknown channel");
+							PutError("unknown channel");
 							return HALT;
 						}
 					} else {
-						PutError(sPfx + sTgt, "unknown network");
+						PutError("unknown network");
 						return HALT;
 					}
 				}
@@ -1373,112 +1379,112 @@ CModule::EModRet CAdminMod::OnUserRaw(CString& sLine)
 	return CONTINUE;
 }
 
-CModule::EModRet CAdminMod::OnUserCommand(CUser* pUser, const CString& sTgt, const CString& sLine)
+CModule::EModRet CAdminMod::OnUserCommand(CUser* pUser, const CString& sLine)
 {
 	const CString sCmd = sLine.Token(0);
 
 	if (pUser != GetUser() && !GetUser()->IsAdmin()) {
-		PutError(sTgt, "access denied");
+		PutError("access denied");
 		return HALT;
 	}
 
 	if (sCmd.Equals("Help"))
-		OnHelpCommand(sTgt, sLine, UserCmds);
+		OnHelpCommand(sLine, UserCmds);
 	else if (sCmd.Equals("ListVars"))
-		OnListVarsCommand(pUser, sTgt, sLine, UserVars);
+		OnListVarsCommand(pUser, sLine, UserVars);
 	else if (sCmd.Equals("Get"))
-		OnGetCommand(pUser, sTgt, sLine, UserVars);
+		OnGetCommand(pUser, sLine, UserVars);
 	else if (sCmd.Equals("Set"))
-		OnSetCommand(pUser, sTgt, sLine, UserVars);
+		OnSetCommand(pUser, sLine, UserVars);
 	else if (sCmd.Equals("Reset"))
-		OnResetCommand(pUser, sTgt, sLine, UserVars);
+		OnResetCommand(pUser, sLine, UserVars);
 	else
-		PutError(sTgt, "unknown command");
+		PutError("unknown command");
 
 	return HALT;
 }
 
-CModule::EModRet CAdminMod::OnNetworkCommand(CIRCNetwork* pNetwork, const CString& sTgt, const CString& sLine)
+CModule::EModRet CAdminMod::OnNetworkCommand(CIRCNetwork* pNetwork, const CString& sLine)
 {
 	const CString sCmd = sLine.Token(0);
 
 	if (pNetwork->GetUser() != GetUser() && !GetUser()->IsAdmin()) {
-		PutError(sTgt, "access denied");
+		PutError("access denied");
 		return HALT;
 	}
 
 	if (sCmd.Equals("Help"))
-		OnHelpCommand(sTgt, sLine, NetworkCmds);
+		OnHelpCommand(sLine, NetworkCmds);
 	else if (sCmd.Equals("ListVars"))
-		OnListVarsCommand(pNetwork, sTgt, sLine, NetworkVars);
+		OnListVarsCommand(pNetwork, sLine, NetworkVars);
 	else if (sCmd.Equals("Get"))
-		OnGetCommand(pNetwork, sTgt, sLine, NetworkVars);
+		OnGetCommand(pNetwork, sLine, NetworkVars);
 	else if (sCmd.Equals("Set"))
-		OnSetCommand(pNetwork, sTgt, sLine, NetworkVars);
+		OnSetCommand(pNetwork, sLine, NetworkVars);
 	else if (sCmd.Equals("Reset"))
-		OnResetCommand(pNetwork, sTgt, sLine, NetworkVars);
+		OnResetCommand(pNetwork, sLine, NetworkVars);
 	else
-		PutError(sTgt, "unknown command");
+		PutError("unknown command");
 
 	return HALT;
 }
 
-CModule::EModRet CAdminMod::OnChanCommand(CChan* pChan, const CString& sTgt, const CString& sLine)
+CModule::EModRet CAdminMod::OnChanCommand(CChan* pChan, const CString& sLine)
 {
 	const CString sCmd = sLine.Token(0);
 
 	if (pChan->GetNetwork()->GetUser() != GetUser() && !GetUser()->IsAdmin()) {
-		PutError(sTgt, "access denied");
+		PutError("access denied");
 		return HALT;
 	}
 
 	if (sCmd.Equals("Help"))
-		OnHelpCommand(sTgt, sLine, ChanCmds);
+		OnHelpCommand(sLine, ChanCmds);
 	else if (sCmd.Equals("ListVars"))
-		OnListVarsCommand(pChan, sTgt, sLine, ChanVars);
+		OnListVarsCommand(pChan, sLine, ChanVars);
 	else if (sCmd.Equals("Get"))
-		OnGetCommand(pChan, sTgt, sLine, ChanVars);
+		OnGetCommand(pChan, sLine, ChanVars);
 	else if (sCmd.Equals("Set"))
-		OnSetCommand(pChan, sTgt, sLine, ChanVars);
+		OnSetCommand(pChan, sLine, ChanVars);
 	else if (sCmd.Equals("Reset"))
-		OnResetCommand(pChan, sTgt, sLine, ChanVars);
+		OnResetCommand(pChan, sLine, ChanVars);
 	else
-		PutError(sTgt, "unknown command");
+		PutError("unknown command");
 
 	return HALT;
 }
 
 template <typename C>
-void CAdminMod::OnHelpCommand(const CString& sTgt, const CString& sLine, const std::vector<C>& vCmds)
+void CAdminMod::OnHelpCommand(const CString& sLine, const std::vector<C>& vCmds)
 {
 	const CString sFilter = sLine.Token(1);
 
 	const CTable Table = FilterCmdTable(vCmds, sFilter);
 	if (!Table.empty())
-		PutTable(sTgt, Table);
+		PutTable(Table);
 	else
-		PutLine(sTgt, "No matches for '" + sFilter + "'");
+		PutLine("No matches for '" + sFilter + "'");
 }
 
 template <typename T, typename V>
-void CAdminMod::OnListVarsCommand(T* pObject, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars)
+void CAdminMod::OnListVarsCommand(T* pObject, const CString& sLine, const std::vector<V>& vVars)
 {
 	const CString sFilter = sLine.Token(1);
 
 	const CTable Table = FilterVarTable(vVars, sFilter);
 	if (!Table.empty())
-		PutTable(sTgt, Table);
+		PutTable(Table);
 	else
-		PutError(sTgt, "unknown variable");
+		PutError("unknown variable");
 }
 
 template <typename T, typename V>
-void CAdminMod::OnGetCommand(T* pObject, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars)
+void CAdminMod::OnGetCommand(T* pObject, const CString& sLine, const std::vector<V>& vVars)
 {
 	const CString sVar = sLine.Token(1);
 
 	if (sVar.empty()) {
-		PutLine(sTgt, "Usage: Get <variable>");
+		PutLine("Usage: Get <variable>");
 		return;
 	}
 
@@ -1488,27 +1494,27 @@ void CAdminMod::OnGetCommand(T* pObject, const CString& sTgt, const CString& sLi
 			VCString vsValues;
 			Var.getter(pObject).Split("\n", vsValues, false);
 			if (vsValues.empty()) {
-				PutLine(sTgt, Var.name + " = ");
+				PutLine(Var.name + " = ");
 			} else {
 				for (const CString& s : vsValues)
-					PutLine(sTgt, Var.name + " = " + s);
+					PutLine(Var.name + " = " + s);
 			}
 			bFound = true;
 		}
 	}
 
 	if (!bFound)
-		PutError(sTgt, "unknown variable");
+		PutError("unknown variable");
 }
 
 template <typename T, typename V>
-void CAdminMod::OnSetCommand(T* pObject, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars)
+void CAdminMod::OnSetCommand(T* pObject, const CString& sLine, const std::vector<V>& vVars)
 {
 	const CString sVar = sLine.Token(1);
 	const CString sVal = sLine.Token(2, true);
 
 	if (sVar.empty() || sVal.empty()) {
-		PutLine(sTgt, "Usage: Set <variable> <value>");
+		PutLine("Usage: Set <variable> <value>");
 		return;
 	}
 
@@ -1517,15 +1523,15 @@ void CAdminMod::OnSetCommand(T* pObject, const CString& sTgt, const CString& sLi
 		if (Var.name.WildCmp(sVar, CString::CaseInsensitive)) {
 			CString sError;
 			if (!Var.setter(GetUser(), pObject, sVal, sError)) {
-				PutError(sTgt, sError);
+				PutError(sError);
 			} else {
 				VCString vsValues;
 				Var.getter(pObject).Split("\n", vsValues, false);
 				if (vsValues.empty()) {
-					PutLine(sTgt, Var.name + " = ");
+					PutLine(Var.name + " = ");
 				} else {
 					for (const CString& s : vsValues)
-						PutLine(sTgt, Var.name + " = " + s);
+						PutLine(Var.name + " = " + s);
 				}
 			}
 			bFound = true;
@@ -1533,16 +1539,16 @@ void CAdminMod::OnSetCommand(T* pObject, const CString& sTgt, const CString& sLi
 	}
 
 	if (!bFound)
-		PutError(sTgt, "unknown variable");
+		PutError("unknown variable");
 }
 
 template <typename T, typename V>
-void CAdminMod::OnResetCommand(T* pObject, const CString& sTgt, const CString& sLine, const std::vector<V>& vVars)
+void CAdminMod::OnResetCommand(T* pObject, const CString& sLine, const std::vector<V>& vVars)
 {
 	const CString sVar = sLine.Token(1);
 
 	if (sVar.empty()) {
-		PutLine(sTgt, "Usage: Reset <variable>");
+		PutLine("Usage: Reset <variable>");
 		return;
 	}
 
@@ -1551,17 +1557,17 @@ void CAdminMod::OnResetCommand(T* pObject, const CString& sTgt, const CString& s
 		if (Var.name.WildCmp(sVar, CString::CaseInsensitive)) {
 			CString sError;
 			if (!Var.resetter) {
-				PutError(sTgt, "reset not supported");
+				PutError("reset not supported");
 			} else if (!Var.resetter(GetUser(), pObject, sError)) {
-				PutError(sTgt, sError);
+				PutError(sError);
 			} else {
 				VCString vsValues;
 				Var.getter(pObject).Split("\n", vsValues, false);
 				if (vsValues.empty()) {
-					PutLine(sTgt, Var.name + " = ");
+					PutLine(Var.name + " = ");
 				} else {
 					for (const CString& s : vsValues)
-						PutLine(sTgt, Var.name + " = " + s);
+						PutLine(Var.name + " = " + s);
 				}
 			}
 			bFound = true;
@@ -1569,11 +1575,11 @@ void CAdminMod::OnResetCommand(T* pObject, const CString& sTgt, const CString& s
 	}
 
 	if (!bFound)
-		PutError(sTgt, "unknown variable");
+		PutError("unknown variable");
 }
 
 template <typename T, typename C>
-void CAdminMod::OnOtherCommand(T* pObject, const CString& sTgt, const CString& sLine, const std::vector<C>& vCmds)
+void CAdminMod::OnOtherCommand(T* pObject, const CString& sLine, const std::vector<C>& vCmds)
 {
 	const CString sCmd = sLine.Token(0);
 	const CString sArgs = sLine.Token(1, true);
@@ -1583,17 +1589,17 @@ void CAdminMod::OnOtherCommand(T* pObject, const CString& sTgt, const CString& s
 			CString sError;
 			if (!Cmd.func(GetUser(), pObject, sArgs, sError)) {
 				if (sError.empty())
-					PutLine(sTgt, "Usage: " + Cmd.syntax);
+					PutLine("Usage: " + Cmd.syntax);
 				else
-					PutError(sTgt, sError);
+					PutError(sError);
 			} else {
-				PutLine(sTgt, "Ok");
+				PutLine("Ok");
 			}
 			return;
 		}
 	}
 
-	PutError(sTgt, "unknown command");
+	PutError("unknown command");
 }
 
 template <typename C>
@@ -1664,13 +1670,15 @@ CTable CAdminMod::FilterVarTable(const std::vector<V>& vVars, const CString& sFi
 	return Table;
 }
 
-void CAdminMod::PutError(const CString& sTgt, const CString& sError)
+void CAdminMod::PutError(const CString& sError, const CString& sTarget)
 {
-	PutLine(sTgt, "Error: " + sError);
+	PutLine("Error: " + sError, sTarget);
 }
 
-void CAdminMod::PutLine(const CString& sTgt, const CString& sLine)
+void CAdminMod::PutLine(const CString& sLine, const CString& sTarget)
 {
+	const CString sTgt = sTarget.empty() ? (m_sTarget.empty() ? GetModName() : m_sTarget) : sTarget;
+
 	if (CClient* pClient = GetClient())
 		pClient->PutModule(sTgt, sLine);
 	else if (CIRCNetwork* pNetwork = GetNetwork())
@@ -1679,12 +1687,12 @@ void CAdminMod::PutLine(const CString& sTgt, const CString& sLine)
 		pUser->PutModule(sTgt, sLine);
 }
 
-void CAdminMod::PutTable(const CString& sTgt, const CTable& Table)
+void CAdminMod::PutTable(const CTable& Table, const CString& sTarget)
 {
 	CString sLine;
 	unsigned int i = 0;
 	while (Table.GetLine(i++, sLine))
-		PutLine(sTgt, sLine);
+		PutLine(sLine, sTarget);
 }
 
 template<> void TModInfo<CAdminMod>(CModInfo& Info) {
