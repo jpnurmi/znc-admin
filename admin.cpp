@@ -1169,6 +1169,17 @@ private:
 			}
 		},
 		{
+			"Broadcast <message>",
+			"Broadcasts a message to all ZNC users.",
+			[=](CZNC* pZNC, const CString& sArgs) {
+				if (sArgs.empty()) {
+					PutUsage("Broadcast <message>");
+					return;
+				}
+				pZNC->Broadcast(sArgs);
+			}
+		},
+		{
 			"DelUser <username>",
 			"Deletes a user.",
 			[=](CZNC* pZNC, const CString& sArgs) {
@@ -1266,6 +1277,17 @@ private:
 			}
 		},
 		{
+			"Rehash",
+			"Reloads the ZNC configuration file.",
+			[=](CZNC* pZNC, const CString& sArgs) {
+				CString sError;
+				if (pZNC->RehashConfig(sError))
+					PutError("failed to read '" + pZNC->GetConfigFile() + "'");
+				else
+					PutSuccess("read '" + pZNC->GetConfigFile() + "'");
+			}
+		},
+		{
 			"ReloadMod <module> [args]",
 			"Reloads a global module.",
 			[=](CZNC* pZNC, const CString& sArgs) {
@@ -1283,6 +1305,52 @@ private:
 					PutError(sError);
 				else
 					PutSuccess("module '" + sMod + "' reloaded");
+			}
+		},
+		{
+			"Restart [--force] [message]",
+			"Restarts ZNC.",
+			[=](CZNC* pZNC, const CString& sArgs) {
+				bool bForce = sArgs.Token(0).Equals("--force");
+				CString sMessage = sArgs.Token(bForce ? 1 : 0, true);
+				if (sMessage.empty())
+					sMessage = "ZNC is being restarted NOW!";
+
+				if (!pZNC->WriteConfig() && !bForce) {
+					PutError("saving config failed");
+					PutLine("Aborting. Use --force to ignore.");
+				} else {
+					pZNC->Broadcast(sMessage);
+					throw CException(CException::EX_Restart);
+				}
+			}
+		},
+		{
+			"SaveConfig",
+			"Saves the ZNC configuration file.",
+			[=](CZNC* pZNC, const CString& sArgs) {
+				if (!pZNC->WriteConfig())
+					PutError("failed to write '" + pZNC->GetConfigFile() + "'");
+				else
+					PutSuccess("wrote '" + pZNC->GetConfigFile() + "'");
+			}
+		},
+		{
+			"Shutdown [--force] [message]",
+			"Shuts down ZNC.",
+			[=](CZNC* pZNC, const CString& sArgs) {
+				bool bForce = sArgs.Token(0).Equals("--force");
+				CString sMessage = sArgs.Token(bForce ? 1 : 0, true);
+				if (sMessage.empty())
+					sMessage = "ZNC is being shut down NOW!";
+
+				if (!pZNC->WriteConfig() && !bForce) {
+					PutError("saving config failed");
+					PutLine("Aborting. Use --force to ignore.");
+				} else {
+					pZNC->Broadcast(sMessage);
+					throw CException(CException::EX_Shutdown);
+				}
 			}
 		},
 		{
