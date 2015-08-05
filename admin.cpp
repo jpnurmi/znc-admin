@@ -1780,47 +1780,33 @@ void CAdminMod::OnExecCommand(T* pObject, const CString& sLine, const std::vecto
 template <typename C>
 CTable CAdminMod::FilterCmdTable(const std::vector<C>& vCmds, const CString& sFilter) const
 {
+	std::map<CString, CString> mCommands;
+
+	if (sFilter.empty() || CString("Get").WildCmp(sFilter, CString::CaseInsensitive))
+		mCommands["Get <variable>"] = "Gets the value of a variable.";
+	if (sFilter.empty() || CString("Help").WildCmp(sFilter, CString::CaseInsensitive))
+		mCommands["Help [filter]"] = "Generates this output.";
+	if (sFilter.empty() || CString("ListVars").WildCmp(sFilter, CString::CaseInsensitive))
+		mCommands["ListVars [filter]"] = "Lists available variables filtered by name or type.";
+	if (sFilter.empty() || CString("Reset").WildCmp(sFilter, CString::CaseInsensitive))
+		mCommands["Reset <variable>"] = "Resets the value of a variable.";
+	if (sFilter.empty() || CString("Set").WildCmp(sFilter, CString::CaseInsensitive))
+		mCommands["Set <variable> <value>"] = "Sets the value of a variable.";
+
+	for (const auto& Cmd : vCmds) {
+		const CString sCmd =  Cmd.syntax.Token(0);
+		if (sFilter.empty() || sCmd.StartsWith(sFilter) || sCmd.WildCmp(sFilter, CString::CaseInsensitive))
+			mCommands[Cmd.syntax] = Cmd.description;
+	}
+
 	CTable Table;
 	Table.AddColumn("Command");
 	Table.AddColumn("Description");
 
-	if (sFilter.empty() || CString("Get").WildCmp(sFilter, CString::CaseInsensitive)) {
+	for (const auto& it : mCommands) {
 		Table.AddRow();
-		Table.SetCell("Command", "Get <variable>");
-		Table.SetCell("Description", "Gets the value of a variable.");
-	}
-
-	if (sFilter.empty() || CString("Help").WildCmp(sFilter, CString::CaseInsensitive)) {
-		Table.AddRow();
-		Table.SetCell("Command", "Help [filter]");
-		Table.SetCell("Description", "Generates this output.");
-	}
-
-	if (sFilter.empty() || CString("ListVars").WildCmp(sFilter, CString::CaseInsensitive)) {
-		Table.AddRow();
-		Table.SetCell("Command", "ListVars [filter]");
-		Table.SetCell("Description", "Lists available variables filtered by name or type.");
-	}
-
-	if (sFilter.empty() || CString("Set").WildCmp(sFilter, CString::CaseInsensitive)) {
-		Table.AddRow();
-		Table.SetCell("Command", "Set <variable> <value>");
-		Table.SetCell("Description", "Sets the value of a variable.");
-	}
-
-	if (sFilter.empty() || CString("Reset").WildCmp(sFilter, CString::CaseInsensitive)) {
-		Table.AddRow();
-		Table.SetCell("Command", "Reset <variable> <value>");
-		Table.SetCell("Description", "Resets the value(s) of a variable.");
-	}
-
-	for (const auto& Cmd : vCmds) {
-		const CString sCmd =  Cmd.syntax.Token(0);
-		if (sFilter.empty() || sCmd.StartsWith(sFilter) || sCmd.WildCmp(sFilter, CString::CaseInsensitive)) {
-			Table.AddRow();
-			Table.SetCell("Command", Cmd.syntax);
-			Table.SetCell("Description", Cmd.description);
-		}
+		Table.SetCell("Command", it.first);
+		Table.SetCell("Description", it.second);
 	}
 
 	return Table;
