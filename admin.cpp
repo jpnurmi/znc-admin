@@ -15,10 +15,11 @@
  */
 
 #include <znc/Modules.h>
-#include <znc/User.h>
 #include <znc/IRCNetwork.h>
 #include <znc/Listener.h>
+#include <znc/IRCSock.h>
 #include <znc/Server.h>
+#include <znc/User.h>
 #include <znc/Chan.h>
 #include <znc/znc.h>
 #include <functional>
@@ -1634,6 +1635,38 @@ private:
 			}
 		},
 		{
+			"Connect [server]",
+			"Connects to an IRC server.",
+			[=](CIRCNetwork* pNetwork, const CString& sArgs) {
+				CServer *pServer = nullptr;
+				if (!sArgs.empty()) {
+					pServer = pNetwork->FindServer(sArgs);
+					if (!pServer) {
+						PutError("unknown server");
+						return;
+					}
+					pNetwork->SetNextServer(pServer);
+
+					// if the network is already connecting to
+					// a server, the attempt must be aborted
+					CIRCSock *pSock = pNetwork->GetIRCSock();
+					if (pSock && !pSock->IsConnected())
+						pSock->Close();
+				}
+
+				CIRCSock* pSock = pNetwork->GetIRCSock();
+				if (pSock)
+					pSock->Quit();
+
+				if (pServer)
+					PutSuccess("connecting to '" + pServer->GetName() + "'...");
+				else if (pSock)
+					PutSuccess("jumping to the next server on the list...");
+				else
+					PutSuccess("connecting...");
+			}
+		},
+		{
 			"DelServer <host> [[+]port] [pass]",
 			"Deletes an IRC server.",
 			[=](CIRCNetwork* pNetwork, const CString& sArgs) {
@@ -1652,6 +1685,20 @@ private:
 					PutSuccess("server deleted");
 				else
 					PutError("no such server");
+			}
+		},
+		{
+			"Disconnect [message]",
+			"Disconnects from the IRC server.",
+			[=](CIRCNetwork* pNetwork, const CString& sArgs) {
+				CIRCSock* pSock = pNetwork->GetIRCSock();
+				if (pSock) {
+					pSock->Quit(sArgs);
+					PutSuccess("disconnected");
+				} else {
+					PutError("not connected");
+				}
+				pNetwork->SetIRCConnectEnabled(false);
 			}
 		},
 		{
