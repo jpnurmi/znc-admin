@@ -1537,6 +1537,112 @@ private:
 	};
 
 	const std::vector<Command<CUser>> UserCmds = {
+		{
+			"ListMods [filter]",
+			"Lists user modules.",
+			[=](CUser* pUser, const CString& sArgs) {
+				const CString sFilter = sArgs.Token(0);
+
+				std::set<CModInfo> sMods;
+				pUser->GetModules().GetAvailableMods(sMods, CModInfo::UserModule);
+
+				CTable Table;
+				Table.AddColumn("Module");
+				Table.AddColumn("Description");
+
+				for (const CModInfo& Info : sMods) {
+					const CString& sName = Info.GetName();
+					if (sFilter.empty() || sName.StartsWith(sFilter) || sName.WildCmp(sFilter, CString::CaseInsensitive)) {
+						Table.AddRow();
+						if (pUser->GetModules().FindModule(sName))
+							Table.SetCell("Module", sName + " (loaded)");
+						else
+							Table.SetCell("Module", sName);
+						Table.SetCell("Description", Info.GetDescription().Ellipsize(128));
+					}
+				}
+
+				if (Table.empty())
+					PutError("no matches for '" + sFilter + "'");
+				else
+					PutTable(Table);
+			}
+		},
+		{
+			"LoadMod <module> [args]",
+			"Loads a user module.",
+			[=](CUser* pUser, const CString& sArgs) {
+				if (!GetUser()->IsAdmin() && GetUser()->DenyLoadMod()) {
+					PutError("access deniend");
+					return;
+				}
+
+				const CString sMod = sArgs.Token(0);
+				if (sMod.empty()) {
+					PutUsage("LoadMod <module> [args]");
+					return;
+				}
+
+				CModInfo Info;
+				CString sError;
+				if (!pUser->GetModules().GetModInfo(Info, sMod, sError))
+					PutError(sError);
+				else if (!pUser->GetModules().LoadModule(sMod, sArgs.Token(1, true), CModInfo::UserModule, nullptr, nullptr, sError))
+					PutError(sError);
+				else
+					PutSuccess("module '" + sMod + "' loaded");
+			}
+		},
+		{
+			"ReloadMod <module> [args]",
+			"Reloads a user module.",
+			[=](CUser* pUser, const CString& sArgs) {
+				if (!GetUser()->IsAdmin() && GetUser()->DenyLoadMod()) {
+					PutError("access deniend");
+					return;
+				}
+
+				const CString sMod = sArgs.Token(0);
+				if (sMod.empty()) {
+					PutUsage("ReloadMod <module> [args]");
+					return;
+				}
+
+				CModInfo Info;
+				CString sError;
+				if (!pUser->GetModules().GetModInfo(Info, sMod, sError))
+					PutError(sError);
+				else if (!pUser->GetModules().ReloadModule(sMod, sArgs.Token(1, true), nullptr, nullptr, sError))
+					PutError(sError);
+				else
+					PutSuccess("module '" + sMod + "' reloaded");
+			}
+		},
+		{
+			"UnloadMod <module> [args]",
+			"Unloads a user module.",
+			[=](CUser* pUser, const CString& sArgs) {
+				if (!GetUser()->IsAdmin() && GetUser()->DenyLoadMod()) {
+					PutError("access deniend");
+					return;
+				}
+
+				const CString sMod = sArgs.Token(0);
+				if (sMod.empty()) {
+					PutUsage("UnloadMod <module> [args]");
+					return;
+				}
+
+				CModInfo Info;
+				CString sError;
+				if (!pUser->GetModules().GetModInfo(Info, sMod, sError))
+					PutError(sError);
+				else if (!pUser->GetModules().UnloadModule(sMod, sError))
+					PutError(sError);
+				else
+					PutSuccess("module '" + sMod + "' unloaded");
+			}
+		},
 	};
 
 	const std::vector<Command<CIRCNetwork>> NetworkCmds = {
