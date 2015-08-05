@@ -1139,6 +1139,57 @@ private:
 
 	const std::vector<Command<CZNC>> GlobalCmds = {
 		{
+			"AddPort <[+]port> <ipv4|ipv6|all> <web|irc|all> [bindhost [uriprefix]]",
+			"Adds a port for ZNC to listen on.",
+			[=](CZNC* pZNC, const CString& sArgs) {
+				CString sPort = sArgs.Token(0);
+				CString sAddr = sArgs.Token(1);
+				CString sAccept = sArgs.Token(2);
+				CString sBindHost = sArgs.Token(3);
+				CString sURIPrefix = sArgs.Token(4);
+
+				unsigned short uPort = sPort.ToUShort();
+				bool bSSL = sPort.StartsWith("+");
+
+				EAddrType eAddr = ADDR_ALL;
+				if (sAddr.Equals("IPV4"))
+					eAddr = ADDR_IPV4ONLY;
+				else if (sAddr.Equals("IPV6"))
+					eAddr = ADDR_IPV6ONLY;
+				else if (sAddr.Equals("ALL"))
+					eAddr = ADDR_ALL;
+				else
+					sAddr.clear();
+
+				CListener::EAcceptType eAccept = CListener::ACCEPT_ALL;
+				if (sAccept.Equals("WEB"))
+					eAccept = CListener::ACCEPT_HTTP;
+				else if (sAccept.Equals("IRC"))
+					eAccept = CListener::ACCEPT_IRC;
+				else if (sAccept.Equals("ALL"))
+					eAccept = CListener::ACCEPT_ALL;
+				else
+					sAccept.clear();
+
+				if (sPort.empty() || sAddr.empty() || sAccept.empty()) {
+					PutUsage("AddPort <[+]port> <ipv4|ipv6|all> <web|irc|all> [bindhost [uriprefix]]");
+					return;
+				}
+
+				CListener* pListener = new CListener(uPort, sBindHost, sURIPrefix, bSSL, eAddr, eAccept);
+				if (!pListener->Listen()) {
+					delete pListener;
+					PutError("unable to bind '" + CString(strerror(errno)) + "'");
+				} else {
+					CString sError;
+					if (!pZNC->AddListener(pListener))
+						PutError("internal error");
+					else
+						PutSuccess("port added");
+				}
+			}
+		},
+		{
 			"AddUser <username> <password>",
 			"Adds a new user.",
 			[=](CZNC* pZNC, const CString& sArgs) {
@@ -1177,6 +1228,40 @@ private:
 					return;
 				}
 				pZNC->Broadcast(sArgs);
+			}
+		},
+		{
+			"DelPort <[+]port> <ipv4|ipv6|all> [bindhost]",
+			"Deletes a port.",
+			[=](CZNC* pZNC, const CString& sArgs) {
+				CString sPort = sArgs.Token(0);
+				CString sAddr = sArgs.Token(1);
+				CString sBindHost = sArgs.Token(2);
+
+				unsigned short uPort = sPort.ToUShort();
+
+				EAddrType eAddr = ADDR_ALL;
+				if (sAddr.Equals("IPV4"))
+					eAddr = ADDR_IPV4ONLY;
+				else if (sAddr.Equals("IPV6"))
+					eAddr = ADDR_IPV6ONLY;
+				else if (sAddr.Equals("ALL"))
+					eAddr = ADDR_ALL;
+				else
+					sAddr.clear();
+
+				if (sPort.empty() || sAddr.empty()) {
+					PutUsage("DelPort <port> <ipv4|ipv6|all> [bindhost]");
+					return;
+				}
+
+				CListener* pListener = pZNC->FindListener(uPort, sBindHost, eAddr);
+				if (pListener) {
+					pZNC->DelListener(pListener);
+					PutSuccess("port deleted");
+				} else {
+					PutError("no matching port");
+				}
 			}
 		},
 		{
@@ -1251,6 +1336,62 @@ private:
 					Table.SetCell("Username", it.first);
 					Table.SetCell("Networks", CString(it.second->GetNetworks().size()));
 					Table.SetCell("Clients", CString(it.second->GetAllClients().size()));
+				}
+
+				PutTable(Table);
+			}
+		},
+		{
+			"ListPorts [filter]",
+			"Lists all ZNC ports.",
+			[=](CZNC* pZNC, const CString& sArgs) {
+				const CString& sFilter = sArgs.Token(0);
+
+				CTable Table;
+				Table.AddColumn("Port");
+				Table.AddColumn("Options");
+
+				for (const CListener* pListener : pZNC->GetListeners()) {
+					VCString vsOptions;
+					vsOptions.push_back(pListener->GetBindHost().empty() ? "*" : pListener->GetBindHost());
+					if (pListener->GetAddrType() == ADDR_IPV6ONLY || pListener->GetAddrType() == ADDR_ALL)
+						vsOptions.push_back("IPv6");
+					if (pListener->GetAddrType() == ADDR_IPV4ONLY || pListener->GetAddrType() == ADDR_ALL)
+						vsOptions.push_back("IPv4");
+					if (pListener->GetAcceptType() == CListener::ACCEPT_ALL || pListener->GetAcceptType() == CListener::ACCEPT_IRC)
+						vsOptions.push_back("IRC");
+					if (pListener->GetAcceptType() == CListener::ACCEPT_ALL || pListener->GetAcceptType() == CListener::ACCEPT_HTTP) {
+						vsOptions.push_back("WEB");
+						if (!pListener->GetURIPrefix().empty())
+							vsOptions.push_back(pListener->GetURIPrefix() + "/");
+					}
+
+					if (!sFilter.empty()) {
+						bool bMatch = false;
+
+						if (CString(pListener->GetPort()).WildCmp(sFilter.TrimPrefix_n("+"))) {
+							bMatch = true;
+						} else {
+							for (const CString& sOption : vsOptions) {
+								if (sOption.Equals(sFilter)) {
+									bMatch = true;
+									break;
+								}
+							}
+						}
+
+						if (!bMatch) {
+							PutLine("No matches for '" + sFilter + "'");
+							return;
+						}
+					}
+
+					Table.AddRow();
+					if (pListener->IsSSL())
+						Table.SetCell("Port", "+" + CString(pListener->GetPort()));
+					else
+						Table.SetCell("Port", CString(pListener->GetPort()));
+					Table.SetCell("Options", CString(", ").Join(vsOptions.begin(), vsOptions.end()));
 				}
 
 				PutTable(Table);
