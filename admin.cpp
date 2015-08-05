@@ -40,8 +40,8 @@ struct Variable
 	VarType type;
 	CString description;
 	std::function<CString(const T*)> getter;
-	std::function<bool(T*, const CString&, CString&)> setter;
-	std::function<bool(T*, CString&)> resetter;
+	std::function<bool(T*, const CString&)> setter;
+	std::function<bool(T*)> resetter;
 };
 
 template <typename T>
@@ -49,7 +49,7 @@ struct Command
 {
 	CString syntax;
 	CString description;
-	std::function<bool(T*, const CString&, CString&)> func;
+	std::function<bool(T*, const CString&)> func;
 };
 
 class CAdminMod : public CModule
@@ -105,11 +105,11 @@ private:
 			[=](const CZNC* pZNC) {
 				return CString(pZNC->GetAnonIPLimit());
 			},
-			[=](CZNC* pZNC, const CString& sVal, CString& sError) {
+			[=](CZNC* pZNC, const CString& sVal) {
 				pZNC->SetAnonIPLimit(sVal.ToUInt());
 				return true;
 			},
-			[=](CZNC* pZNC, CString& sError) {
+			[=](CZNC* pZNC) {
 				pZNC->SetAnonIPLimit(10);
 				return true;
 			}
@@ -121,11 +121,11 @@ private:
 			[=](const CZNC* pZNC) {
 				return CString(pZNC->GetConnectDelay());
 			},
-			[=](CZNC* pZNC, const CString& sVal, CString& sError) {
+			[=](CZNC* pZNC, const CString& sVal) {
 				pZNC->SetConnectDelay(sVal.ToUInt());
 				return true;
 			},
-			[=](CZNC* pZNC, CString& sError) {
+			[=](CZNC* pZNC) {
 				pZNC->SetConnectDelay(5);
 				return true;
 			}
@@ -136,11 +136,11 @@ private:
 			[=](const CZNC* pZNC) {
 				return CString(pZNC->GetHideVersion());
 			},
-			[=](CZNC* pZNC, const CString& sVal, CString& sError) {
+			[=](CZNC* pZNC, const CString& sVal) {
 				pZNC->SetHideVersion(sVal.ToBool());
 				return true;
 			},
-			[=](CZNC* pZNC, CString& sError) {
+			[=](CZNC* pZNC) {
 				pZNC->SetHideVersion(false);
 				return true;
 			}
@@ -151,11 +151,11 @@ private:
 			[=](const CZNC* pZNC) {
 				return CString(pZNC->GetMaxBufferSize());
 			},
-			[=](CZNC* pZNC, const CString& sVal, CString& sError) {
+			[=](CZNC* pZNC, const CString& sVal) {
 				pZNC->SetMaxBufferSize(sVal.ToUInt());
 				return true;
 			},
-			[=](CZNC* pZNC, CString& sError) {
+			[=](CZNC* pZNC) {
 				pZNC->SetMaxBufferSize(500);
 				return true;
 			}
@@ -167,11 +167,11 @@ private:
 				const VCString& vsMotd = pZNC->GetMotd();
 				return CString("\n").Join(vsMotd.begin(), vsMotd.end());
 			},
-			[=](CZNC* pZNC, const CString& sVal, CString& sError) {
+			[=](CZNC* pZNC, const CString& sVal) {
 				pZNC->AddMotd(sVal);
 				return true;
 			},
-			[=](CZNC* pZNC, CString& sError) {
+			[=](CZNC* pZNC) {
 				pZNC->ClearMotd();
 				return true;
 			},
@@ -183,11 +183,11 @@ private:
 			[=](const CZNC* pZNC) {
 				return CString(pZNC->GetProtectWebSessions());
 			},
-			[=](CZNC* pZNC, const CString& sVal, CString& sError) {
+			[=](CZNC* pZNC, const CString& sVal) {
 				pZNC->SetProtectWebSessions(sVal.ToBool());
 				return true;
 			},
-			[=](CZNC* pZNC, CString& sError) {
+			[=](CZNC* pZNC) {
 				pZNC->SetProtectWebSessions(true);
 				return true;
 			}
@@ -198,11 +198,11 @@ private:
 			[=](const CZNC* pZNC) {
 				return CString(pZNC->GetServerThrottle());
 			},
-			[=](CZNC* pZNC, const CString& sVal, CString& sError) {
+			[=](CZNC* pZNC, const CString& sVal) {
 				pZNC->SetServerThrottle(sVal.ToUInt());
 				return true;
 			},
-			[=](CZNC* pZNC, CString& sError) {
+			[=](CZNC* pZNC) {
 				pZNC->SetServerThrottle(30);
 				return true;
 			}
@@ -213,11 +213,11 @@ private:
 			[=](const CZNC* pZNC) {
 				return pZNC->GetSkinName();
 			},
-			[=](CZNC* pZNC, const CString& sVal, CString& sError) {
+			[=](CZNC* pZNC, const CString& sVal) {
 				pZNC->SetSkinName(sVal);
 				return true;
 			},
-			[=](CZNC* pZNC, CString& sError) {
+			[=](CZNC* pZNC) {
 				pZNC->SetSkinName("");
 				return true;
 			}
@@ -228,11 +228,11 @@ private:
 			[=](const CZNC* pZNC) {
 				return pZNC->GetSSLCertFile();
 			},
-			[=](CZNC* pZNC, const CString& sVal, CString& sError) {
+			[=](CZNC* pZNC, const CString& sVal) {
 				pZNC->SetSSLCertFile(sVal);
 				return true;
 			},
-			[=](CZNC* pZNC, CString& sError) {
+			[=](CZNC* pZNC) {
 				pZNC->SetSSLCertFile(pZNC->GetZNCPath() + "/znc.pem");
 				return true;
 			},
@@ -243,11 +243,11 @@ private:
 			[=](const CZNC* pZNC) {
 				return pZNC->GetSSLCiphers();
 			},
-			[=](CZNC* pZNC, const CString& sVal, CString& sError) {
+			[=](CZNC* pZNC, const CString& sVal) {
 				pZNC->SetSSLCiphers(sVal);
 				return true;
 			},
-			[=](CZNC* pZNC, CString& sError) {
+			[=](CZNC* pZNC) {
 				pZNC->SetSSLCiphers("");
 				return true;
 			},
@@ -258,14 +258,14 @@ private:
 			[=](const CZNC* pZNC) {
 				return pZNC->GetSSLProtocols();
 			},
-			[=](CZNC* pZNC, const CString& sVal, CString& sError) {
+			[=](CZNC* pZNC, const CString& sVal) {
 				if (!pZNC->SetSSLProtocols(sVal)) {
-					sError = "unknown protocol";
+					PutError("unknown protocol");
 					return false;
 				}
 				return true;
 			},
-			[=](CZNC* pZNC, CString& sError) {
+			[=](CZNC* pZNC) {
 				pZNC->SetSSLProtocols("");
 				return true;
 			},
@@ -276,11 +276,11 @@ private:
 			[=](const CZNC* pZNC) {
 				return pZNC->GetSkinName();
 			},
-			[=](CZNC* pZNC, const CString& sVal, CString& sError) {
+			[=](CZNC* pZNC, const CString& sVal) {
 				pZNC->SetSkinName(sVal);
 				return true;
 			},
-			[=](CZNC* pZNC, CString& sError) {
+			[=](CZNC* pZNC) {
 				pZNC->SetStatusPrefix("");
 				return true;
 			}
@@ -292,14 +292,14 @@ private:
 				const VCString& vsProxies = pZNC->GetTrustedProxies();
 				return CString("\n").Join(vsProxies.begin(), vsProxies.end());
 			},
-			[=](CZNC* pZNC, const CString& sVal, CString& sError) {
+			[=](CZNC* pZNC, const CString& sVal) {
 				SCString ssProxies;
 				sVal.Split(" ", ssProxies, false);
 				for (const CString& sProxy : ssProxies)
 					pZNC->AddTrustedProxy(sProxy);
 				return true;
 			},
-			[=](CZNC* pZNC, CString& sError) {
+			[=](CZNC* pZNC) {
 				pZNC->ClearTrustedProxies();
 				return true;
 			}
@@ -313,11 +313,11 @@ private:
 			[=](const CUser* pObject) {
 				return CString(pObject->IsAdmin());
 			},
-			[=](CUser* pObject, const CString& sVal, CString& sError) {
+			[=](CUser* pObject, const CString& sVal) {
 				pObject->SetAdmin(sVal.ToBool());
 				return true;
 			},
-			[=](CUser* pObject, CString& sError) {
+			[=](CUser* pObject) {
 				pObject->SetAdmin(false);
 				return true;
 			}
@@ -328,11 +328,11 @@ private:
 			[=](const CUser* pObject) {
 				return GetInfix();
 			},
-			[=](CUser* pObject, const CString& sVal, CString& sError) {
+			[=](CUser* pObject, const CString& sVal) {
 				SetInfix(sVal);
 				return true;
 			},
-			[=](CUser* pObject, CString& sError) {
+			[=](CUser* pObject) {
 				SetInfix(GetUser()->GetStatusPrefix());
 				return true;
 			}
@@ -344,14 +344,14 @@ private:
 				const SCString& ssHosts = pObject->GetAllowedHosts();
 				return CString("\n").Join(ssHosts.begin(), ssHosts.end());
 			},
-			[=](CUser* pObject, const CString& sVal, CString& sError) {
+			[=](CUser* pObject, const CString& sVal) {
 				SCString ssHosts;
 				sVal.Split(" ", ssHosts, false);
 				for (const CString& sHost : ssHosts)
 					pObject->AddAllowedHost(sHost);
 				return true;
 			},
-			[=](CUser* pObject, CString& sError) {
+			[=](CUser* pObject) {
 				pObject->ClearAllowedHosts();
 				return true;
 			}
@@ -362,11 +362,11 @@ private:
 			[=](const CUser* pObject) {
 				return pObject->GetAltNick();
 			},
-			[=](CUser* pObject, const CString& sVal, CString& sError) {
+			[=](CUser* pObject, const CString& sVal) {
 				pObject->SetAltNick(sVal);
 				return true;
 			},
-			[=](CUser* pObject, CString& sError) {
+			[=](CUser* pObject) {
 				pObject->SetAltNick("");
 				return true;
 			}
@@ -377,11 +377,11 @@ private:
 			[=](const CUser* pObject) {
 				return CString(pObject->GetTimestampAppend());
 			},
-			[=](CUser* pObject, const CString& sVal, CString& sError) {
+			[=](CUser* pObject, const CString& sVal) {
 				pObject->SetTimestampAppend(sVal.ToBool());
 				return true;
 			},
-			[=](CUser* pObject, CString& sError) {
+			[=](CUser* pObject) {
 				pObject->SetTimestampAppend(false);
 				return true;
 			}
@@ -392,11 +392,11 @@ private:
 			[=](const CUser* pObject) {
 				return CString(pObject->AutoClearChanBuffer());
 			},
-			[=](CUser* pObject, const CString& sVal, CString& sError) {
+			[=](CUser* pObject, const CString& sVal) {
 				pObject->SetAutoClearChanBuffer(sVal.ToBool());
 				return true;
 			},
-			[=](CUser* pObject, CString& sError) {
+			[=](CUser* pObject) {
 				pObject->SetAutoClearChanBuffer(true);
 				return true;
 			}
@@ -407,11 +407,11 @@ private:
 			[=](const CUser* pObject) {
 				return CString(pObject->AutoClearQueryBuffer());
 			},
-			[=](CUser* pObject, const CString& sVal, CString& sError) {
+			[=](CUser* pObject, const CString& sVal) {
 				pObject->SetAutoClearQueryBuffer(sVal.ToBool());
 				return true;
 			},
-			[=](CUser* pObject, CString& sError) {
+			[=](CUser* pObject) {
 				pObject->SetAutoClearQueryBuffer(true);
 				return true;
 			}
@@ -422,15 +422,15 @@ private:
 			[=](const CUser* pObject) {
 				return pObject->GetBindHost();
 			},
-			[=](CUser* pObject, const CString& sVal, CString& sError) {
+			[=](CUser* pObject, const CString& sVal) {
 				if (!GetUser()->IsAdmin() && GetUser()->DenySetBindHost()) {
-					sError = "access denied";
+					PutError("access denied");
 					return false;
 				}
 				pObject->SetBindHost(sVal);
 				return true;
 			},
-			[=](CUser* pObject, CString& sError) {
+			[=](CUser* pObject) {
 				pObject->SetBindHost("");
 				return true;
 			}
@@ -441,14 +441,14 @@ private:
 			[=](const CUser* pObject) {
 				return CString(pObject->GetChanBufferSize());
 			},
-			[=](CUser* pObject, const CString& sVal, CString& sError) {
+			[=](CUser* pObject, const CString& sVal) {
 				if (!pObject->SetChanBufferSize(sVal.ToUInt(), GetUser()->IsAdmin())) {
-					sError = "exceeded limit " + CString(CZNC::Get().GetMaxBufferSize());
+					PutError("exceeded limit " + CString(CZNC::Get().GetMaxBufferSize()));
 					return false;
 				}
 				return true;
 			},
-			[=](CUser* pObject, CString& sError) {
+			[=](CUser* pObject) {
 				pObject->SetChanBufferSize(50);
 				return true;
 			},
@@ -459,11 +459,11 @@ private:
 			[=](const CUser* pObject) {
 				return pObject->GetDefaultChanModes();
 			},
-			[=](CUser* pObject, const CString& sVal, CString& sError) {
+			[=](CUser* pObject, const CString& sVal) {
 				pObject->SetDefaultChanModes(sVal);
 				return true;
 			},
-			[=](CUser* pObject, CString& sError) {
+			[=](CUser* pObject) {
 				pObject->SetDefaultChanModes("");
 				return true;
 			}
@@ -475,11 +475,11 @@ private:
 			[=](const CUser* pObject) {
 				return pObject->GetClientEncoding();
 			},
-			[=](CUser* pObject, const CString& sVal, CString& sError) {
+			[=](CUser* pObject, const CString& sVal) {
 				pObject->SetClientEncoding(sVal);
 				return true;
 			},
-			[=](CUser* pObject, CString& sError) {
+			[=](CUser* pObject) {
 				pObject->SetClientEncoding("");
 				return true;
 			}
@@ -494,23 +494,23 @@ private:
 					vsReplies.push_back(it.first + " " + it.second);
 				return CString("\n").Join(vsReplies.begin(), vsReplies.end());
 			},
-			[=](CUser* pObject, const CString& sVal, CString& sError) {
+			[=](CUser* pObject, const CString& sVal) {
 				CString sRequest = sVal.Token(0);
 				CString sReply = sVal.Token(1, true);
 				if (sReply.empty()) {
 					if (!pObject->DelCTCPReply(sRequest.AsUpper())) {
-						sError = "unable to remove";
+						PutError("unable to remove");
 						return false;
 					}
 				} else {
 					if (!pObject->AddCTCPReply(sRequest, sReply)) {
-						sError = "unable to add";
+						PutError("unable to add");
 						return false;
 					}
 				}
 				return true;
 			},
-			[=](CUser* pObject, CString& sError) {
+			[=](CUser* pObject) {
 				MCString mReplies = pObject->GetCTCPReplies();
 				for (const auto& it : mReplies)
 					pObject->DelCTCPReply(it.first);
@@ -523,15 +523,15 @@ private:
 			[=](const CUser* pObject) {
 				return pObject->GetDCCBindHost();
 			},
-			[=](CUser* pObject, const CString& sVal, CString& sError) {
+			[=](CUser* pObject, const CString& sVal) {
 				if (!GetUser()->IsAdmin() && GetUser()->DenySetBindHost()) {
-					sError = "access denied";
+					PutError("access denied");
 					return false;
 				}
 				pObject->SetDCCBindHost(sVal);
 				return true;
 			},
-			[=](CUser* pObject, CString& sError) {
+			[=](CUser* pObject) {
 				pObject->SetDCCBindHost("");
 				return true;
 			}
@@ -542,17 +542,17 @@ private:
 			[=](const CUser* pObject) {
 				return CString(pObject->DenyLoadMod());
 			},
-			[=](CUser* pObject, const CString& sVal, CString& sError) {
+			[=](CUser* pObject, const CString& sVal) {
 				if (!GetUser()->IsAdmin()) {
-					sError = "access denied";
+					PutError("access denied");
 					return false;
 				}
 				pObject->SetDenyLoadMod(sVal.ToBool());
 				return true;
 			},
-			[=](CUser* pObject, CString& sError) {
+			[=](CUser* pObject) {
 				if (!GetUser()->IsAdmin()) {
-					sError = "access denied";
+					PutError("access denied");
 					return false;
 				}
 				pObject->SetDenyLoadMod(false);
@@ -565,17 +565,17 @@ private:
 			[=](const CUser* pObject) {
 				return CString(pObject->DenySetBindHost());
 			},
-			[=](CUser* pObject, const CString& sVal, CString& sError) {
+			[=](CUser* pObject, const CString& sVal) {
 				if (!GetUser()->IsAdmin()) {
-					sError = "access denied";
+					PutError("access denied");
 					return false;
 				}
 				pObject->SetDenySetBindHost(sVal.ToBool());
 				return true;
 			},
-			[=](CUser* pObject, CString& sError) {
+			[=](CUser* pObject) {
 				if (!GetUser()->IsAdmin()) {
-					sError = "access denied";
+					PutError("access denied");
 					return false;
 				}
 				pObject->SetDenySetBindHost(false);
@@ -588,7 +588,7 @@ private:
 			[=](const CUser* pObject) {
 				return pObject->GetIdent();
 			},
-			[=](CUser* pObject, const CString& sVal, CString& sError) {
+			[=](CUser* pObject, const CString& sVal) {
 				pObject->SetIdent(sVal);
 				return true;
 			},
@@ -600,11 +600,11 @@ private:
 			[=](const CUser* pObject) {
 				return CString(pObject->JoinTries());
 			},
-			[=](CUser* pObject, const CString& sVal, CString& sError) {
+			[=](CUser* pObject, const CString& sVal) {
 				pObject->SetJoinTries(sVal.ToUInt());
 				return true;
 			},
-			[=](CUser* pObject, CString& sError) {
+			[=](CUser* pObject) {
 				pObject->SetJoinTries(10);
 				return true;
 			}
@@ -615,11 +615,11 @@ private:
 			[=](const CUser* pObject) {
 				return CString(pObject->MaxJoins());
 			},
-			[=](CUser* pObject, const CString& sVal, CString& sError) {
+			[=](CUser* pObject, const CString& sVal) {
 				pObject->SetMaxJoins(sVal.ToUInt());
 				return true;
 			},
-			[=](CUser* pObject, CString& sError) {
+			[=](CUser* pObject) {
 				pObject->SetMaxJoins(0);
 				return true;
 			}
@@ -630,17 +630,17 @@ private:
 			[=](const CUser* pObject) {
 				return CString(pObject->MaxNetworks());
 			},
-			[=](CUser* pObject, const CString& sVal, CString& sError) {
+			[=](CUser* pObject, const CString& sVal) {
 				if (!GetUser()->IsAdmin()) {
-					sError = "access denied";
+					PutError("access denied");
 					return false;
 				}
 				pObject->SetMaxNetworks(sVal.ToUInt());
 				return true;
 			},
-			[=](CUser* pObject, CString& sError) {
+			[=](CUser* pObject) {
 				if (!GetUser()->IsAdmin()) {
-					sError = "access denied";
+					PutError("access denied");
 					return false;
 				}
 				pObject->SetMaxNetworks(1);
@@ -653,11 +653,11 @@ private:
 			[=](const CUser* pObject) {
 				return CString(pObject->MaxQueryBuffers());
 			},
-			[=](CUser* pObject, const CString& sVal, CString& sError) {
+			[=](CUser* pObject, const CString& sVal) {
 				pObject->SetMaxQueryBuffers(sVal.ToUInt());
 				return true;
 			},
-			[=](CUser* pObject, CString& sError) {
+			[=](CUser* pObject) {
 				pObject->SetMaxQueryBuffers(50);
 				return true;
 			}
@@ -668,11 +668,11 @@ private:
 			[=](const CUser* pObject) {
 				return CString(pObject->MultiClients());
 			},
-			[=](CUser* pObject, const CString& sVal, CString& sError) {
+			[=](CUser* pObject, const CString& sVal) {
 				pObject->SetMultiClients(sVal.ToBool());
 				return true;
 			},
-			[=](CUser* pObject, CString& sError) {
+			[=](CUser* pObject) {
 				pObject->SetMultiClients(true);
 				return true;
 			}
@@ -683,11 +683,11 @@ private:
 			[=](const CUser* pObject) {
 				return pObject->GetNick();
 			},
-			[=](CUser* pObject, const CString& sVal, CString& sError) {
+			[=](CUser* pObject, const CString& sVal) {
 				pObject->SetNick(sVal);
 				return true;
 			},
-			[=](CUser* pObject, CString& sError) {
+			[=](CUser* pObject) {
 				pObject->SetNick("");
 				return true;
 			}
@@ -698,11 +698,11 @@ private:
 			[=](const CUser* pObject) {
 				return CString(pObject->GetTimestampPrepend());
 			},
-			[=](CUser* pObject, const CString& sVal, CString& sError) {
+			[=](CUser* pObject, const CString& sVal) {
 				pObject->SetTimestampPrepend(sVal.ToBool());
 				return true;
 			},
-			[=](CUser* pObject, CString& sError) {
+			[=](CUser* pObject) {
 				pObject->SetTimestampPrepend(true);
 				return true;
 			}
@@ -713,7 +713,7 @@ private:
 			[=](const CUser* pObject) {
 				return CString(".", pObject->GetPass().size());
 			},
-			[=](CUser* pObject, const CString& sVal, CString& sError) {
+			[=](CUser* pObject, const CString& sVal) {
 				const CString sSalt = CUtils::GetSalt();
 				const CString sHash = CUser::SaltedHash(sVal, sSalt);
 				pObject->SetPass(sHash, CUser::HASH_DEFAULT, sSalt);
@@ -727,14 +727,14 @@ private:
 			[=](const CUser* pObject) {
 				return CString(pObject->GetQueryBufferSize());
 			},
-			[=](CUser* pObject, const CString& sVal, CString& sError) {
+			[=](CUser* pObject, const CString& sVal) {
 				if (!pObject->SetQueryBufferSize(sVal.ToUInt(), GetUser()->IsAdmin())) {
-					sError = "exceeded limit " + CString(CZNC::Get().GetMaxBufferSize());
+					PutError("exceeded limit " + CString(CZNC::Get().GetMaxBufferSize()));
 					return false;
 				}
 				return true;
 			},
-			[=](CUser* pObject, CString& sError) {
+			[=](CUser* pObject) {
 				pObject->SetQueryBufferSize(50);
 				return true;
 			}
@@ -745,11 +745,11 @@ private:
 			[=](const CUser* pObject) {
 				return pObject->GetQuitMsg();
 			},
-			[=](CUser* pObject, const CString& sVal, CString& sError) {
+			[=](CUser* pObject, const CString& sVal) {
 				pObject->SetQuitMsg(sVal);
 				return true;
 			},
-			[=](CUser* pObject, CString& sError) {
+			[=](CUser* pObject) {
 				pObject->SetQuitMsg("");
 				return true;
 			}
@@ -760,11 +760,11 @@ private:
 			[=](const CUser* pObject) {
 				return pObject->GetRealName();
 			},
-			[=](CUser* pObject, const CString& sVal, CString& sError) {
+			[=](CUser* pObject, const CString& sVal) {
 				pObject->SetRealName(sVal);
 				return true;
 			},
-			[=](CUser* pObject, CString& sError) {
+			[=](CUser* pObject) {
 				pObject->SetRealName("");
 				return true;
 			}
@@ -775,11 +775,11 @@ private:
 			[=](const CUser* pObject) {
 				return pObject->GetSkinName();
 			},
-			[=](CUser* pObject, const CString& sVal, CString& sError) {
+			[=](CUser* pObject, const CString& sVal) {
 				pObject->SetSkinName(sVal);
 				return true;
 			},
-			[=](CUser* pObject, CString& sError) {
+			[=](CUser* pObject) {
 				pObject->SetSkinName("");
 				return true;
 			}
@@ -790,11 +790,11 @@ private:
 			[=](const CUser* pObject) {
 				return pObject->GetStatusPrefix();
 			},
-			[=](CUser* pObject, const CString& sVal, CString& sError) {
+			[=](CUser* pObject, const CString& sVal) {
 				pObject->SetStatusPrefix(sVal);
 				return true;
 			},
-			[=](CUser* pObject, CString& sError) {
+			[=](CUser* pObject) {
 				pObject->SetStatusPrefix("*");
 				return true;
 			}
@@ -805,11 +805,11 @@ private:
 			[=](const CUser* pObject) {
 				return pObject->GetTimestampFormat();
 			},
-			[=](CUser* pObject, const CString& sVal, CString& sError) {
+			[=](CUser* pObject, const CString& sVal) {
 				pObject->SetTimestampFormat(sVal);
 				return true;
 			},
-			[=](CUser* pObject, CString& sError) {
+			[=](CUser* pObject) {
 				pObject->SetTimestampFormat("[%H:%M:%S]");
 				return true;
 			}
@@ -820,11 +820,11 @@ private:
 			[=](const CUser* pObject) {
 				return pObject->GetTimezone();
 			},
-			[=](CUser* pObject, const CString& sVal, CString& sError) {
+			[=](CUser* pObject, const CString& sVal) {
 				pObject->SetTimezone(sVal);
 				return true;
 			},
-			[=](CUser* pObject, CString& sError) {
+			[=](CUser* pObject) {
 				pObject->SetTimezone("");
 				return true;
 			}
@@ -838,11 +838,11 @@ private:
 			[=](const CIRCNetwork* pObject) {
 				return pObject->GetAltNick();
 			},
-			[=](CIRCNetwork* pObject, const CString& sVal, CString& sError) {
+			[=](CIRCNetwork* pObject, const CString& sVal) {
 				pObject->SetAltNick(sVal);
 				return true;
 			},
-			[=](CIRCNetwork* pObject, CString& sError) {
+			[=](CIRCNetwork* pObject) {
 				pObject->SetAltNick("");
 				return true;
 			}
@@ -853,15 +853,15 @@ private:
 			[=](const CIRCNetwork* pObject) {
 				return pObject->GetBindHost();
 			},
-			[=](CIRCNetwork* pObject, const CString& sVal, CString& sError) {
+			[=](CIRCNetwork* pObject, const CString& sVal) {
 				if (!GetUser()->IsAdmin() && GetUser()->DenySetBindHost()) {
-					sError = "access denied";
+					PutError("access denied");
 					return false;
 				}
 				pObject->SetBindHost(sVal);
 				return true;
 			},
-			[=](CIRCNetwork* pObject, CString& sError) {
+			[=](CIRCNetwork* pObject) {
 				pObject->SetBindHost("");
 				return true;
 			}
@@ -873,11 +873,11 @@ private:
 			[=](const CIRCNetwork* pObject) {
 				return pObject->GetEncoding();
 			},
-			[=](CIRCNetwork* pObject, const CString& sVal, CString& sError) {
+			[=](CIRCNetwork* pObject, const CString& sVal) {
 				pObject->SetEncoding(sVal);
 				return true;
 			},
-			[=](CIRCNetwork* pObject, CString& sError) {
+			[=](CIRCNetwork* pObject) {
 				pObject->SetEncoding("");
 				return true;
 			}
@@ -889,11 +889,11 @@ private:
 			[=](const CIRCNetwork* pObject) {
 				return CString(pObject->GetFloodBurst());
 			},
-			[=](CIRCNetwork* pObject, const CString& sVal, CString& sError) {
+			[=](CIRCNetwork* pObject, const CString& sVal) {
 				pObject->SetFloodBurst(sVal.ToUShort());
 				return true;
 			},
-			[=](CIRCNetwork* pObject, CString& sError) {
+			[=](CIRCNetwork* pObject) {
 				pObject->SetFloodBurst(4);
 				return true;
 			}
@@ -904,11 +904,11 @@ private:
 			[=](const CIRCNetwork* pObject) {
 				return CString(pObject->GetFloodRate());
 			},
-			[=](CIRCNetwork* pObject, const CString& sVal, CString& sError) {
+			[=](CIRCNetwork* pObject, const CString& sVal) {
 				pObject->SetFloodRate(sVal.ToDouble());
 				return true;
 			},
-			[=](CIRCNetwork* pObject, CString& sError) {
+			[=](CIRCNetwork* pObject) {
 				pObject->SetFloodRate(1);
 				return true;
 			}
@@ -919,11 +919,11 @@ private:
 			[=](const CIRCNetwork* pObject) {
 				return pObject->GetIdent();
 			},
-			[=](CIRCNetwork* pObject, const CString& sVal, CString& sError) {
+			[=](CIRCNetwork* pObject, const CString& sVal) {
 				pObject->SetIdent(sVal);
 				return true;
 			},
-			[=](CIRCNetwork* pObject, CString& sError) {
+			[=](CIRCNetwork* pObject) {
 				pObject->SetIdent("");
 				return true;
 			}
@@ -935,11 +935,11 @@ private:
 			[=](const CIRCNetwork* pObject) {
 				return CString(pObject->GetJoinDelay());
 			},
-			[=](CIRCNetwork* pObject, const CString& sVal, CString& sError) {
+			[=](CIRCNetwork* pObject, const CString& sVal) {
 				pObject->SetJoinDelay(sVal.ToUShort());
 				return true;
 			},
-			[=](CIRCNetwork* pObject, CString& sError) {
+			[=](CIRCNetwork* pObject) {
 				pObject->SetJoinDelay(0);
 				return true;
 			}
@@ -950,11 +950,11 @@ private:
 			[=](const CIRCNetwork* pObject) {
 				return pObject->GetNick();
 			},
-			[=](CIRCNetwork* pObject, const CString& sVal, CString& sError) {
+			[=](CIRCNetwork* pObject, const CString& sVal) {
 				pObject->SetNick(sVal);
 				return true;
 			},
-			[=](CIRCNetwork* pObject, CString& sError) {
+			[=](CIRCNetwork* pObject) {
 				pObject->SetNick("");
 				return true;
 			}
@@ -965,11 +965,11 @@ private:
 			[=](const CIRCNetwork* pObject) {
 				return pObject->GetQuitMsg();
 			},
-			[=](CIRCNetwork* pObject, const CString& sVal, CString& sError) {
+			[=](CIRCNetwork* pObject, const CString& sVal) {
 				pObject->SetQuitMsg(sVal);
 				return true;
 			},
-			[=](CIRCNetwork* pObject, CString& sError) {
+			[=](CIRCNetwork* pObject) {
 				pObject->SetQuitMsg("");
 				return true;
 			}
@@ -980,11 +980,11 @@ private:
 			[=](const CIRCNetwork* pObject) {
 				return pObject->GetRealName();
 			},
-			[=](CIRCNetwork* pObject, const CString& sVal, CString& sError) {
+			[=](CIRCNetwork* pObject, const CString& sVal) {
 				pObject->SetRealName(sVal);
 				return true;
 			},
-			[=](CIRCNetwork* pObject, CString& sError) {
+			[=](CIRCNetwork* pObject) {
 				pObject->SetRealName("");
 				return true;
 			}
@@ -996,11 +996,11 @@ private:
 				const SCString& sFP = pObject->GetTrustedFingerprints();
 				return CString("\n").Join(sFP.begin(), sFP.end());
 			},
-			[=](CIRCNetwork* pObject, const CString& sVal, CString& sError) {
+			[=](CIRCNetwork* pObject, const CString& sVal) {
 				pObject->AddTrustedFingerprint(sVal);
 				return true;
 			},
-			[=](CIRCNetwork* pObject, CString& sError) {
+			[=](CIRCNetwork* pObject) {
 				pObject->ClearTrustedFingerprints();
 				return true;
 			}
@@ -1017,11 +1017,11 @@ private:
 					sVal += " (default)";
 				return sVal;
 			},
-			[=](CChan* pObject, const CString& sVal, CString& sError) {
+			[=](CChan* pObject, const CString& sVal) {
 				pObject->SetAutoClearChanBuffer(sVal.ToBool());
 				return true;
 			},
-			[=](CChan* pObject, CString& sError) {
+			[=](CChan* pObject) {
 				pObject->ResetAutoClearChanBuffer();
 				return true;
 			}
@@ -1035,14 +1035,14 @@ private:
 					sVal += " (default)";
 				return sVal;
 			},
-			[=](CChan* pObject, const CString& sVal, CString& sError) {
+			[=](CChan* pObject, const CString& sVal) {
 				if (!pObject->SetBufferCount(sVal.ToUInt(), GetUser()->IsAdmin())) {
-					sError = "exceeded limit " + CString(CZNC::Get().GetMaxBufferSize());
+					PutError("exceeded limit " + CString(CZNC::Get().GetMaxBufferSize()));
 					return false;
 				}
 				return true;
 			},
-			[=](CChan* pObject, CString& sError) {
+			[=](CChan* pObject) {
 				pObject->ResetBufferCount();
 				return true;
 			}
@@ -1053,7 +1053,7 @@ private:
 			[=](const CChan* pObject) {
 				return CString(pObject->IsDetached());
 			},
-			[=](CChan* pObject, const CString& sVal, CString& sError) {
+			[=](CChan* pObject, const CString& sVal) {
 				bool b = sVal.ToBool();
 				if (b != pObject->IsDetached()) {
 					if (b)
@@ -1063,7 +1063,7 @@ private:
 				}
 				return true;
 			},
-			[=](CChan* pObject, CString& sError) {
+			[=](CChan* pObject) {
 				if (pObject->IsDetached())
 					pObject->AttachUser();
 				return true;
@@ -1075,7 +1075,7 @@ private:
 			[=](const CChan* pObject) {
 				return CString(pObject->IsDisabled());
 			},
-			[=](CChan* pObject, const CString& sVal, CString& sError) {
+			[=](CChan* pObject, const CString& sVal) {
 				bool b = sVal.ToBool();
 				if (b != pObject->IsDisabled()) {
 					if (b)
@@ -1085,7 +1085,7 @@ private:
 				}
 				return true;
 			},
-			[=](CChan* pObject, CString& sError) {
+			[=](CChan* pObject) {
 				if (pObject->IsDisabled())
 					pObject->Enable();
 				return true;
@@ -1097,7 +1097,7 @@ private:
 			[=](const CChan* pObject) {
 				return CString(pObject->InConfig());
 			},
-			[=](CChan* pObject, const CString& sVal, CString& sError) {
+			[=](CChan* pObject, const CString& sVal) {
 				pObject->SetInConfig(sVal.ToBool());
 				return true;
 			},
@@ -1109,11 +1109,11 @@ private:
 			[=](const CChan* pObject) {
 				return pObject->GetKey();
 			},
-			[=](CChan* pObject, const CString& sVal, CString& sError) {
+			[=](CChan* pObject, const CString& sVal) {
 				pObject->SetKey(sVal);
 				return true;
 			},
-			[=](CChan* pObject, CString& sError) {
+			[=](CChan* pObject) {
 				pObject->SetKey("");
 				return true;
 			}
@@ -1124,11 +1124,11 @@ private:
 			[=](const CChan* pObject) {
 				return pObject->GetDefaultModes();
 			},
-			[=](CChan* pObject, const CString& sVal, CString& sError) {
+			[=](CChan* pObject, const CString& sVal) {
 				pObject->SetDefaultModes(sVal);
 				return true;
 			},
-			[=](CChan* pObject, CString& sError) {
+			[=](CChan* pObject) {
 				pObject->SetDefaultModes("");
 				return true;
 			}
@@ -1139,9 +1139,9 @@ private:
 		{
 			"AddUser <username> <password>",
 			"Adds a new user.",
-			[=](CZNC* pObject, const CString& sArgs, CString& sError) {
+			[=](CZNC* pObject, const CString& sArgs) {
 				if (!GetUser()->IsAdmin()) {
-					sError = "access denied";
+					PutError("access denied");
 					return false;
 				}
 
@@ -1151,7 +1151,7 @@ private:
 					return false;
 
 				if (pObject->FindUser(sUsername)) {
-					sError = "already exists";
+					PutError("already exists");
 					return false;
 				}
 
@@ -1159,7 +1159,9 @@ private:
 				CString sSalt = CUtils::GetSalt();
 				pUser->SetPass(CUser::SaltedHash(sPassword, sSalt), CUser::HASH_DEFAULT, sSalt);
 
+				CString sError;
 				if (!CZNC::Get().AddUser(pUser, sError)) {
+					PutError(sError);
 					delete pUser;
 					return false;
 				}
@@ -1170,9 +1172,9 @@ private:
 		{
 			"DelUser <username>",
 			"Deletes a user.",
-			[=](CZNC* pObject, const CString& sArgs, CString& sError) {
+			[=](CZNC* pObject, const CString& sArgs) {
 				if (!GetUser()->IsAdmin()) {
-					sError = "access denied";
+					PutError("access denied");
 					return false;
 				}
 
@@ -1182,12 +1184,12 @@ private:
 
 				CUser *pUser = CZNC::Get().FindUser(sUsername);
 				if (!pUser) {
-					sError = "doesn't exist";
+					PutError("doesn't exist");
 					return false;
 				}
 
 				if (pUser == GetUser()) {
-					sError = "access denied";
+					PutError("access denied");
 					return false;
 				}
 
@@ -1512,10 +1514,7 @@ void CAdminMod::OnSetCommand(T* pObject, const CString& sLine, const std::vector
 	bool bFound = false;
 	for (const auto& Var : vVars) {
 		if (Var.name.WildCmp(sVar, CString::CaseInsensitive)) {
-			CString sError;
-			if (!Var.setter(pObject, sVal, sError)) {
-				PutError(sError);
-			} else {
+			if (Var.setter(pObject, sVal)) {
 				VCString vsValues;
 				Var.getter(pObject).Split("\n", vsValues, false);
 				if (vsValues.empty()) {
@@ -1546,12 +1545,9 @@ void CAdminMod::OnResetCommand(T* pObject, const CString& sLine, const std::vect
 	bool bFound = false;
 	for (const auto& Var : vVars) {
 		if (Var.name.WildCmp(sVar, CString::CaseInsensitive)) {
-			CString sError;
 			if (!Var.resetter) {
 				PutError("reset not supported");
-			} else if (!Var.resetter(pObject, sError)) {
-				PutError(sError);
-			} else {
+			} else if (Var.resetter(pObject)) {
 				VCString vsValues;
 				Var.getter(pObject).Split("\n", vsValues, false);
 				if (vsValues.empty()) {
@@ -1577,15 +1573,8 @@ void CAdminMod::OnOtherCommand(T* pObject, const CString& sLine, const std::vect
 
 	for (const auto& Cmd : vCmds) {
 		if (Cmd.syntax.Token(0).Equals(sCmd)) {
-			CString sError;
-			if (!Cmd.func(pObject, sArgs, sError)) {
-				if (sError.empty())
-					PutLine("Usage: " + Cmd.syntax);
-				else
-					PutError(sError);
-			} else {
+			if (Cmd.func(pObject, sArgs))
 				PutLine("Ok");
-			}
 			return;
 		}
 	}
