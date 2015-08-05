@@ -1399,7 +1399,7 @@ CModule::EModRet CAdminMod::OnUserCommand(CUser* pUser, const CString& sLine)
 	else if (sCmd.Equals("Reset"))
 		OnResetCommand(pUser, sLine, UserVars);
 	else
-		PutError("unknown command");
+		OnOtherCommand(pUser, sLine, UserCmds);
 
 	return HALT;
 }
@@ -1424,7 +1424,7 @@ CModule::EModRet CAdminMod::OnNetworkCommand(CIRCNetwork* pNetwork, const CStrin
 	else if (sCmd.Equals("Reset"))
 		OnResetCommand(pNetwork, sLine, NetworkVars);
 	else
-		PutError("unknown command");
+		OnOtherCommand(pNetwork, sLine, NetworkCmds);
 
 	return HALT;
 }
@@ -1449,7 +1449,7 @@ CModule::EModRet CAdminMod::OnChanCommand(CChan* pChan, const CString& sLine)
 	else if (sCmd.Equals("Reset"))
 		OnResetCommand(pChan, sLine, ChanVars);
 	else
-		PutError("unknown command");
+		OnOtherCommand(pChan, sLine, ChanCmds);
 
 	return HALT;
 }
