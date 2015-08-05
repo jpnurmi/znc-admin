@@ -1142,11 +1142,6 @@ private:
 			"AddUser <username> <password>",
 			"Adds a new user.",
 			[=](CZNC* pZNC, const CString& sArgs) {
-				if (!GetUser()->IsAdmin()) {
-					PutError("access denied");
-					return;
-				}
-
 				const CString sUsername = sArgs.Token(0);
 				const CString sPassword = sArgs.Token(1);
 				if (sPassword.empty()) {
@@ -1177,11 +1172,6 @@ private:
 			"DelUser <username>",
 			"Deletes a user.",
 			[=](CZNC* pZNC, const CString& sArgs) {
-				if (!GetUser()->IsAdmin()) {
-					PutError("access denied");
-					return;
-				}
-
 				const CString sUsername = sArgs.Token(0);
 				if (sUsername.empty()) {
 					PutUsage("DelUser <username>");
@@ -1210,11 +1200,6 @@ private:
 			"ListUsers [filter]",
 			"Lists all ZNC users.",
 			[=](CZNC* pZNC, const CString& sArgs) {
-				if (!GetUser()->IsAdmin()) {
-					PutError("access denied");
-					return;
-				}
-
 				CTable Table;
 				Table.AddColumn("Username");
 				Table.AddColumn("Networks");
@@ -1262,7 +1247,7 @@ void CAdminMod::OnModCommand(const CString& sLine)
 
 	m_sTarget = GetModName();
 
-	if (!GetUser()->IsAdmin() && (sCmd.Equals("Set") || sCmd.Equals("Reset"))) {
+	if (!GetUser()->IsAdmin() && !sCmd.Equals("Help") && !sCmd.Equals("Get") && !sCmd.Equals("ListVars")) {
 		PutError("access denied.");
 		return;
 	}
