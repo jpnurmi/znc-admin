@@ -1763,11 +1763,13 @@ private:
 					pSock->Quit();
 
 				if (pServer)
-					PutSuccess("connecting to '" + pServer->GetName() + "'...");
+					PutLine("Connecting to '" + pServer->GetName() + "'...");
 				else if (pSock)
-					PutSuccess("jumping to the next server on the list...");
+					PutLine("Jumping to the next server on the list...");
 				else
-					PutSuccess("connecting...");
+					PutLine("Connecting...");
+
+				pNetwork->SetIRCConnectEnabled(true);
 			}
 		},
 		{
@@ -1798,7 +1800,7 @@ private:
 				CIRCSock* pSock = pNetwork->GetIRCSock();
 				if (pSock) {
 					pSock->Quit(sArgs);
-					PutSuccess("disconnected");
+					PutLine("Disconnected");
 				} else {
 					PutError("not connected");
 				}
