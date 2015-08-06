@@ -1627,7 +1627,10 @@ private:
 					if (sFilter.empty() || pNetwork->GetName().WildCmp(sFilter, CString::CaseInsensitive)) {
 						Table.AddRow();
 						Table.SetCell("Network", pNetwork->GetName());
-						Table.SetCell("Status", pNetwork->IsIRCConnected() ? "Online" : (pNetwork->GetIRCConnectEnabled() ? "Offline" : "Disabled"));
+						if (pNetwork->IsIRCConnected())
+							Table.SetCell("Status", "Online (" + pNetwork->GetCurrentServer()->GetName() + ")");
+						else
+							Table.SetCell("Status", pNetwork->GetIRCConnectEnabled() ? "Offline" : "Disabled");
 					}
 				}
 
