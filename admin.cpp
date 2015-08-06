@@ -1457,6 +1457,25 @@ private:
 			}
 		},
 		{
+			"Traffic",
+			"Shows the amount of traffic.",
+			[=](CZNC* pZNC, const CString& sArgs) {
+				CTable Table;
+				Table.AddColumn("User");
+				Table.AddColumn("Sent");
+				Table.AddColumn("Received");
+				Table.AddColumn("Total");
+				for (const auto& it : pZNC->GetUserMap()) {
+					Table.AddRow();
+					Table.SetCell("User", it.first);
+					Table.SetCell("Sent", CString::ToByteStr(it.second->BytesWritten()));
+					Table.SetCell("Received", CString::ToByteStr(it.second->BytesRead()));
+					Table.SetCell("Total", CString::ToByteStr(it.second->BytesRead() + it.second->BytesWritten()));
+				}
+				PutTable(Table);
+			}
+		},
+		{
 			"UnloadMod <module> [args]",
 			"Unloads a global module.",
 			[=](CZNC* pZNC, const CString& sArgs) {
@@ -1614,13 +1633,17 @@ private:
 			"Shows the amount of user specific traffic.",
 			[=](CUser* pUser, const CString& sArgs) {
 				CTable Table;
-				Table.AddColumn("Read");
-				Table.AddColumn("Written");
+				Table.AddColumn("Network");
+				Table.AddColumn("Sent");
+				Table.AddColumn("Received");
 				Table.AddColumn("Total");
-				Table.AddRow();
-				Table.SetCell("Read", CString::ToByteStr(pUser->BytesRead()));
-				Table.SetCell("Written", CString::ToByteStr(pUser->BytesWritten()));
-				Table.SetCell("Total", CString::ToByteStr(pUser->BytesRead() + pUser->BytesWritten()));
+				for (const CIRCNetwork* pNetwork : pUser->GetNetworks()) {
+					Table.AddRow();
+					Table.SetCell("Network", pNetwork->GetName());
+					Table.SetCell("Sent", CString::ToByteStr(pNetwork->BytesWritten()));
+					Table.SetCell("Received", CString::ToByteStr(pNetwork->BytesRead()));
+					Table.SetCell("Total", CString::ToByteStr(pNetwork->BytesRead() + pNetwork->BytesWritten()));
+				}
 				PutTable(Table);
 			}
 		},
@@ -1796,12 +1819,12 @@ private:
 			"Shows the amount of network specific traffic.",
 			[=](CIRCNetwork* pNetwork, const CString& sArgs) {
 				CTable Table;
-				Table.AddColumn("Read");
-				Table.AddColumn("Written");
+				Table.AddColumn("Sent");
+				Table.AddColumn("Received");
 				Table.AddColumn("Total");
 				Table.AddRow();
-				Table.SetCell("Read", CString::ToByteStr(pNetwork->BytesRead()));
-				Table.SetCell("Written", CString::ToByteStr(pNetwork->BytesWritten()));
+				Table.SetCell("Sent", CString::ToByteStr(pNetwork->BytesWritten()));
+				Table.SetCell("Received", CString::ToByteStr(pNetwork->BytesRead()));
 				Table.SetCell("Total", CString::ToByteStr(pNetwork->BytesRead() + pNetwork->BytesWritten()));
 				PutTable(Table);
 			}
