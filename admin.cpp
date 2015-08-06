@@ -1533,6 +1533,33 @@ private:
 			}
 		},
 		{
+			"Clone <user>",
+			"Clones all attributes from the specified user.",
+			[=](CUser* pUser, const CString& sArgs) {
+				if (!GetUser()->IsAdmin()) {
+					PutError("access denied");
+					return;
+				}
+
+				if (sArgs.empty()) {
+					PutUsage("Clone <user>");
+					return;
+				}
+
+				CUser *pSource = CZNC::Get().FindUser(sArgs);
+				if (!pSource) {
+					PutError("unknown user");
+					return;
+				}
+
+				CString sError;
+				if (!pUser->Clone(*pSource, sError))
+					PutError(sError);
+				else
+					PutSuccess("cloned");
+			}
+		},
+		{
 			"DelNetwork <name>",
 			"Deletes a network.",
 			[=](CUser* pUser, const CString& sArgs) {
@@ -1670,6 +1697,42 @@ private:
 					PutSuccess("server added");
 				else
 					PutError("duplicate or invalid entry");
+			}
+		},
+		{
+			"Clone <network> [user]",
+			"Clones all attributes from the specified network.",
+			[=](CIRCNetwork* pNetwork, const CString& sArgs) {
+				if (sArgs.empty()) {
+					PutUsage("Clone <network> [user]");
+					return;
+				}
+
+				const CString sNetwork = sArgs.Token(0);
+				const CString sUsername = sArgs.Token(1);
+
+				CUser* pUser = pNetwork->GetUser();
+				if (!sUsername.empty())
+					pUser = CZNC::Get().FindUser(sUsername);
+
+				if (pUser != GetUser() && !GetUser()->IsAdmin()) {
+					PutError("access deniend");
+					return;
+				}
+
+				if (!pUser) {
+					PutError("unknown user");
+					return;
+				}
+
+				CIRCNetwork* pSource = pUser->FindNetwork(sNetwork);
+				if (!pSource) {
+					PutError("unknown network");
+					return;
+				}
+
+				pNetwork->Clone(*pSource, false);
+				PutSuccess("cloned");
 			}
 		},
 		{
