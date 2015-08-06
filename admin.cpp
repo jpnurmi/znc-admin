@@ -77,7 +77,7 @@ private:
 	template <typename C>
 	void OnHelpCommand(const CString& sLine, const std::vector<C>& vCmds);
 	template <typename T, typename V>
-	void OnListVarsCommand(T* pObject, const CString& sLine, const std::vector<V>& vVars);
+	void OnListCommand(T* pObject, const CString& sLine, const std::vector<V>& vVars);
 	template <typename T, typename V>
 	void OnGetCommand(T* pObject, const CString& sLine, const std::vector<V>& vVars);
 	template <typename T, typename V>
@@ -1862,7 +1862,7 @@ void CAdminMod::OnModCommand(const CString& sLine)
 
 	m_sTarget = GetModName();
 
-	if (!GetUser()->IsAdmin() && !sCmd.Equals("Help") && !sCmd.Equals("Get") && !sCmd.Equals("ListVars")) {
+	if (!GetUser()->IsAdmin() && !sCmd.Equals("Help") && !sCmd.Equals("Get") && !sCmd.Equals("List")) {
 		PutError("access denied.");
 		return;
 	}
@@ -1903,8 +1903,8 @@ void CAdminMod::OnModCommand(const CString& sLine)
 			PutModule("- channel settings of another network: /msg " + sPfx + "freenode/#znc help");
 			PutModule("- channel settings of another network of another user: /msg " + sPfx + "somebody/freenode/#znc help");
 		}
-	} else if (sCmd.Equals("ListVars")) {
-		OnListVarsCommand(&CZNC::Get(), sLine, GlobalVars);
+	} else if (sCmd.Equals("List")) {
+		OnListCommand(&CZNC::Get(), sLine, GlobalVars);
 	} else if (sCmd.Equals("Get")) {
 		OnGetCommand(&CZNC::Get(), sLine, GlobalVars);
 	} else if (sCmd.Equals("Set")) {
@@ -2016,8 +2016,8 @@ CModule::EModRet CAdminMod::OnUserCommand(CUser* pUser, const CString& sLine)
 
 	if (sCmd.Equals("Help"))
 		OnHelpCommand(sLine, UserCmds);
-	else if (sCmd.Equals("ListVars"))
-		OnListVarsCommand(pUser, sLine, UserVars);
+	else if (sCmd.Equals("List"))
+		OnListCommand(pUser, sLine, UserVars);
 	else if (sCmd.Equals("Get"))
 		OnGetCommand(pUser, sLine, UserVars);
 	else if (sCmd.Equals("Set"))
@@ -2041,8 +2041,8 @@ CModule::EModRet CAdminMod::OnNetworkCommand(CIRCNetwork* pNetwork, const CStrin
 
 	if (sCmd.Equals("Help"))
 		OnHelpCommand(sLine, NetworkCmds);
-	else if (sCmd.Equals("ListVars"))
-		OnListVarsCommand(pNetwork, sLine, NetworkVars);
+	else if (sCmd.Equals("List"))
+		OnListCommand(pNetwork, sLine, NetworkVars);
 	else if (sCmd.Equals("Get"))
 		OnGetCommand(pNetwork, sLine, NetworkVars);
 	else if (sCmd.Equals("Set"))
@@ -2066,8 +2066,8 @@ CModule::EModRet CAdminMod::OnChanCommand(CChan* pChan, const CString& sLine)
 
 	if (sCmd.Equals("Help"))
 		OnHelpCommand(sLine, ChanCmds);
-	else if (sCmd.Equals("ListVars"))
-		OnListVarsCommand(pChan, sLine, ChanVars);
+	else if (sCmd.Equals("List"))
+		OnListCommand(pChan, sLine, ChanVars);
 	else if (sCmd.Equals("Get"))
 		OnGetCommand(pChan, sLine, ChanVars);
 	else if (sCmd.Equals("Set"))
@@ -2093,7 +2093,7 @@ void CAdminMod::OnHelpCommand(const CString& sLine, const std::vector<C>& vCmds)
 }
 
 template <typename T, typename V>
-void CAdminMod::OnListVarsCommand(T* pObject, const CString& sLine, const std::vector<V>& vVars)
+void CAdminMod::OnListCommand(T* pObject, const CString& sLine, const std::vector<V>& vVars)
 {
 	const CString sFilter = sLine.Token(1);
 
@@ -2325,8 +2325,8 @@ CTable CAdminMod::FilterCmdTable(const std::vector<C>& vCmds, const CString& sFi
 		mCommands["Get <variable>"] = "Gets the value of a variable.";
 	if (sFilter.empty() || CString("Help").WildCmp(sFilter, CString::CaseInsensitive))
 		mCommands["Help [filter]"] = "Generates this output.";
-	if (sFilter.empty() || CString("ListVars").WildCmp(sFilter, CString::CaseInsensitive))
-		mCommands["ListVars [filter]"] = "Lists available variables filtered by name or type.";
+	if (sFilter.empty() || CString("List").WildCmp(sFilter, CString::CaseInsensitive))
+		mCommands["List [filter]"] = "Lists available variables filtered by name or type.";
 	if (sFilter.empty() || CString("Reset").WildCmp(sFilter, CString::CaseInsensitive))
 		mCommands["Reset <variable>"] = "Resets the value of a variable.";
 	if (sFilter.empty() || CString("Set").WildCmp(sFilter, CString::CaseInsensitive))
