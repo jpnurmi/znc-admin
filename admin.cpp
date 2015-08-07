@@ -268,13 +268,16 @@ private:
 		},
 		{
 			"SSLProtocols", StringType,
-			"The accepted SSL protocols. Available protocols are All, SSLv2, SSLv3, TLSv1, TLSv1.1 and TLSv1.2.",
+			"The accepted SSL protocols.",
 			[=](const CZNC* pZNC) {
 				return pZNC->GetSSLProtocols();
 			},
 			[=](CZNC* pZNC, const CString& sVal) {
 				if (!pZNC->SetSSLProtocols(sVal)) {
-					PutError("unknown protocol");
+					VCString vsProtocols = pZNC->GetAvailableSSLProtocols();
+					PutError("invalid value");
+					PutError("the syntax is: [+|-]<protocol> ...");
+					PutError("available protocols: " + CString(", ").Join(vsProtocols.begin(), vsProtocols.end()));
 					return false;
 				}
 				return true;
