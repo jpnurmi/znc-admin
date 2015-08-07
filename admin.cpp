@@ -1536,7 +1536,7 @@ private:
 			}
 		},
 		{
-			"Clone <user>",
+			"CloneUser <user>",
 			"Clones all attributes from the specified user.",
 			[=](CUser* pUser, const CString& sArgs) {
 				if (!GetUser()->IsAdmin()) {
@@ -1545,7 +1545,7 @@ private:
 				}
 
 				if (sArgs.empty()) {
-					PutUsage("Clone <user>");
+					PutUsage("CloneUser <user>");
 					return;
 				}
 
@@ -1706,11 +1706,11 @@ private:
 			}
 		},
 		{
-			"Clone <network> [user]",
+			"CloneNetwork <network> [user]",
 			"Clones all attributes from the specified network.",
 			[=](CIRCNetwork* pNetwork, const CString& sArgs) {
 				if (sArgs.empty()) {
-					PutUsage("Clone <network> [user]");
+					PutUsage("CloneNetwork <network> [user]");
 					return;
 				}
 
